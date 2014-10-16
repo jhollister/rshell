@@ -1,0 +1,11 @@
+bin/
+
+# vim files
+*.swp
+*.swo
+
+# object files
+*.o
+
+# executables
+*.out
