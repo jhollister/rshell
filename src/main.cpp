@@ -16,11 +16,12 @@ std::string nextToken(const std::string&, int &);
 int execCommandList(const std::string &);
 int execCommand(std::string &);
 int strip(std::string &);
-
+std::string getPrompt();
 
 int main() {
+    std::string prompt = getPrompt();
     while(1) {
-        std::cout << "$ ";
+        std::cout << prompt;
         std::string str;
         std::getline(std::cin, str);
         execCommandList(str);
@@ -187,4 +188,19 @@ std::string nextToken(const std::string &command, int &current_ind) {
     }
     delete[] current_delim;
     return command.substr(start, length); // no connectors
+}
+
+std::string getPrompt() {
+    std::string prompt = "";
+    prompt += getlogin();
+    prompt += "@";
+    int host_len = 20;
+    char *hostname = new char[host_len];
+    if (gethostname(hostname, host_len) == -1) {
+        perror("gethostname: ");
+        exit(1);
+    }
+    prompt += hostname;
+    prompt +=  "$ ";
+    return prompt;
 }
