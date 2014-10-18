@@ -3,12 +3,13 @@
 #include <string>
 #include <string.h>
 
-#define AND_CONNECTOR "&&"
-#define OR_CONNECTOR  "||"
-#define CONNECTOR     ";"
-
-const char *DELIMS[4] = {AND_CONNECTOR, OR_CONNECTOR, CONNECTOR, 0};
-std::string nextToken(const std::string&, int, const char**);
+const char *AND_CONNECTOR = "&&";
+const char *OR_CONNECTOR =  "||";
+const char *CONNECTOR = ";";
+const char *COMMENT = "#";
+const char *DELIMS[5] = {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR, 0};
+std::string nextToken(const std::string&, int &);
+int execCommandList(const std::string &);
 
 int main() {
     while(1) {
@@ -21,38 +22,89 @@ int main() {
         /* strcpy(cdelims, delims.c_str()); */
         /* strcpy(current_pos, str.c_str()); */
         /* pch = strtok(cdelims, " "); */
-        std::cout << str << std::endl;
-        int start = 0;
-        std::string command = nextToken(str, start, DELIMS);
-        std::cout << command << std::endl;
-        /* execCommand(str.substr(start, length)); */
+        /* std::cout << str << std::end */
+        /* int start = 0; */
+        /* std::string command = nextToken(str, start); */
+        /* std::cout << command << std::endl; */
+        execCommandList(str);
     }
+}
 
 
+/* Executes the list of commands in command_list separated by connectors
+ *
+ */
+int execCommandList(const std::string &command_list) {
+    int count = 0; // keeps track of the number of commands run
+    int current_ind = 0;// keeps track of the current character
+    bool execute = true;
+    int lastCmdStatus = 0; // keeps track of the status of the last command run
+    std::string current_command = nextToken(command_list, current_ind);
+    while (execute) { //(current_command != "") {
+        std::cout << current_command << std::endl;
+        //if (execute) executeCommand(currentCommand);
+        if (command_list.substr(current_ind, strlen(CONNECTOR)) == CONNECTOR) {
+            // ';' connector was used
+            current_ind += strlen(CONNECTOR);
+            current_command = nextToken(command_list, current_ind);
+            execute = true;
+        }
+        else if(command_list.substr(current_ind, strlen(AND_CONNECTOR)) == AND_CONNECTOR) {
+            // "&&" connector was used
+            current_ind += strlen(AND_CONNECTOR);
+            if (lastCmdStatus == 0) {
+                current_command = nextToken(command_list, current_ind);
+                execute = true;
+            }
+            else {
+                execute = false;
+            }
+        }
+        else if(command_list.substr(current_ind, strlen(OR_CONNECTOR)) == OR_CONNECTOR) {
+            // "||" connector was used
+            current_ind += strlen(OR_CONNECTOR);
+            if (lastCmdStatus == -1) {
+                current_command = nextToken(command_list, current_ind);
+                execute = true;
+            }
+            else {
+                execute = false;
+            }
+        }
+        else if((command_list.substr(current_ind, strlen(COMMENT)) == COMMENT) 
+                || command_list[current_ind] == 0) {
+            // '#' comment character was used or we have executed last command
+            execute = false;
+        }
+        count++;
+    }
+    return 0;
 }
 
 //TODO: Memory management
 //returns the length of the current command given the start and the delims
-std::string nextToken(const std::string &command, int start, const char *delims[]) {
+std::string nextToken(const std::string &command, int &current_ind) {
     int delim_pos = 0;
     char *current_delim = new char[3]; // = delims[delim_pos];
-    int current_ind = start;
+    int start = current_ind;
+    int length = 0;
     while (command[current_ind] != 0) {
-        while (delims[delim_pos] != NULL) {
-            strcpy(current_delim, delims[delim_pos]);
+        while (DELIMS[delim_pos] != NULL) {
+            strcpy(current_delim, DELIMS[delim_pos]);
             /* std::cout << current_delim << std::endl; */
             //if (strncmp(current_delim, start + current_ind,
             //            strlen(current_delim)) == 0) {
             if (strcmp(command.substr(current_ind, strlen(current_delim)).c_str(),
                        current_delim) == 0) {
                 delete[] current_delim;
-                return command.substr(start, current_ind);
+                return command.substr(start, length);
             }
             delim_pos++;
         }
+        length++;
         current_ind++;
         delim_pos = 0;
     }
     delete[] current_delim;
-    return command.substr(start, current_ind); // no connectors
+    return command.substr(start, length); // no connectors
 }
