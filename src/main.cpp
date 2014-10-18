@@ -86,11 +86,21 @@ int execCommandList(const std::string &command_list) {
 
 int execCommand(std::string &command) {
     int token_count = strip(command);
-    std::cout << count << " -  " << command << std::endl;
-    /* char *c_command = new char[command.length()+1] */
-    /* strcpy(c_command, command.c_str()); */
-    /* char *tok = strtok(c_command, " "); */
+    /* std::cout << token_count << " -  " << command << std::endl; */
+    char *c_command = new char[command.length()+1];
+    strcpy(c_command, command.c_str());
+    char *tok = strtok(c_command, " ");
     
+    char **args = new char*[token_count];
+    for (int i = 0; i < token_count; i++) {
+        args[i] = tok;
+        std::cout << tok << std::endl;
+        tok = strtok(NULL, " ");
+    }
+
+    delete[] c_command;
+    delete[] args;
+    return 0;
 }
 
 int strip(std::string &str) {
@@ -98,7 +108,7 @@ int strip(std::string &str) {
     strcpy(temp, str.c_str());
     str="";
     char *tok = strtok(temp, " ");
-    int count = 1;
+    int count = 0;
     while(tok != NULL) {
         str += tok;
         str += " ";
