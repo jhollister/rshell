@@ -3,7 +3,12 @@
 #include <string>
 #include <string.h>
 
-int nextCommand(const char*, const char**);
+#define AND_CONNECTOR "&&"
+#define OR_CONNECTOR  "||"
+#define CONNECTOR     ";"
+
+const char *DELIMS[4] = {AND_CONNECTOR, OR_CONNECTOR, CONNECTOR, 0};
+std::string nextToken(const std::string&, int, const char**);
 
 int main() {
     while(1) {
@@ -11,35 +16,43 @@ int main() {
         
         std::string str;
         std::getline(std::cin, str);
-        const char *delims[4] = {"||", "&&", ";", 0};
-        char *cstr = new char[str.length()+1];
+        /* char *current_pos= new char[str.length()+1]; */
         /* char *cdelims = new char[delims.length()+1]; */
         /* strcpy(cdelims, delims.c_str()); */
-        strcpy(cstr, str.c_str());
+        /* strcpy(current_pos, str.c_str()); */
         /* pch = strtok(cdelims, " "); */
-
-        nextCommand(cstr, delims);
+        std::cout << str << std::endl;
+        int start = 0;
+        std::string command = nextToken(str, start, DELIMS);
+        std::cout << command << std::endl;
+        /* execCommand(str.substr(start, length)); */
     }
+
+
 }
 
-//returns the length of the next command given the start and the delims
-int nextCommand(const char *start, const char *delims[]) {
+//TODO: Memory management
+//returns the length of the current command given the start and the delims
+std::string nextToken(const std::string &command, int start, const char *delims[]) {
     int delim_pos = 0;
     char *current_delim = new char[3]; // = delims[delim_pos];
-    int current_pos = 0;
-    while (start[current_pos] != 0) {
+    int current_ind = start;
+    while (command[current_ind] != 0) {
         while (delims[delim_pos] != NULL) {
             strcpy(current_delim, delims[delim_pos]);
             /* std::cout << current_delim << std::endl; */
-            if (strncmp(current_delim, start + current_pos, strlen(current_delim)) == 0) {
-                std::cout << "Equals at " << current_pos << std::endl;
-                return current_pos;
-                
+            //if (strncmp(current_delim, start + current_ind,
+            //            strlen(current_delim)) == 0) {
+            if (strcmp(command.substr(current_ind, strlen(current_delim)).c_str(),
+                       current_delim) == 0) {
+                delete[] current_delim;
+                return command.substr(start, current_ind);
             }
             delim_pos++;
         }
-        current_pos++;
+        current_ind++;
         delim_pos = 0;
     }
-    return 0; // no connectors
+    delete[] current_delim;
+    return command.substr(start, current_ind); // no connectors
 }
