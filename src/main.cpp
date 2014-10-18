@@ -21,19 +21,9 @@ int strip(std::string &);
 int main() {
     while(1) {
         std::cout << "$ ";
-        
         std::string str;
         std::getline(std::cin, str);
-        /* char *current_pos= new char[str.length()+1]; */
-        /* char *cdelims = new char[delims.length()+1]; */
-        /* strcpy(cdelims, delims.c_str()); */
-        /* pch = strtok(cdelims, " "); */
-        /* std::cout << str << std::end */
-        /* int start = 0; */
-        /* std::string command = nextToken(str, start); */
-        /* std::cout << command << std::endl; */
-//        execCommandList(str);
-        execCommand(str);
+        execCommandList(str);
     }
 }
 
@@ -45,12 +35,22 @@ int execCommandList(const std::string &command_list) {
     int count = 0; // keeps track of the number of commands run
     int current_ind = 0;// keeps track of the current character
     bool execute = true;
-    int lastCmdStatus = 0; // keeps track of the status of the last command run
+    int cmd_status = 0; // keeps track of the status of the last command run
     std::string current_command = nextToken(command_list, current_ind);
+    strip(current_command);
+    if (current_command == "" && command_list[current_ind+1] == 0) {
+        // nothing was inputted so just move on with no error message
+        execute = false;
+    }
     while (execute) { //(current_command != "") {
-        std::cout << current_command << std::endl;
-        //if (execute) executeCommand(currentCommand);
-        if (command_list.substr(current_ind, strlen(CONNECTOR)) == CONNECTOR) {
+        /* std::cout << current_command << std::endl; */
+        cmd_status = execCommand(current_command);
+        if (current_command == "") {
+            std::cout << "rshell: syntax error near unexpected token: " <<
+                         command_list[current_ind] << std::endl;
+            execute = false;
+        }
+        else if (command_list.substr(current_ind, strlen(CONNECTOR)) == CONNECTOR) {
             // ';' connector was used
             current_ind += strlen(CONNECTOR);
             current_command = nextToken(command_list, current_ind);
@@ -59,7 +59,7 @@ int execCommandList(const std::string &command_list) {
         else if(command_list.substr(current_ind, strlen(AND_CONNECTOR)) == AND_CONNECTOR) {
             // "&&" connector was used
             current_ind += strlen(AND_CONNECTOR);
-            if (lastCmdStatus == 0) {
+            if (cmd_status == 0) {
                 current_command = nextToken(command_list, current_ind);
                 execute = true;
             }
@@ -70,7 +70,7 @@ int execCommandList(const std::string &command_list) {
         else if(command_list.substr(current_ind, strlen(OR_CONNECTOR)) == OR_CONNECTOR) {
             // "||" connector was used
             current_ind += strlen(OR_CONNECTOR);
-            if (lastCmdStatus == -1) {
+            if (cmd_status != 0) {
                 current_command = nextToken(command_list, current_ind);
                 execute = true;
             }
@@ -83,36 +83,47 @@ int execCommandList(const std::string &command_list) {
             // '#' comment character was used or we have executed last command
             execute = false;
         }
+        else {
+            std::cout << "rshell: syntax error near: " <<
+                         command_list[current_ind] << std::endl;
+            execute = false;
+        }
         count++;
+        strip(current_command);
     }
     return 0;
 }
 
+/*
+ * TODO: Don't call strip since it has already been stripped
+ */
 int execCommand(std::string &command) {
+    int status = 0; //return status of this function - 1 failed - 0 success
     int token_count = strip(command);
     /* std::cout << token_count << " -  " << command << std::endl; */
     char *c_command = new char[command.length()+1];
     strcpy(c_command, command.c_str());
     char *tok = strtok(c_command, " ");
     
-    char **args = new char*[token_count];
+    char **args = new char*[token_count+1];
     for (int i = 0; i < token_count; i++) {
         args[i] = tok;
-        std::cout << tok << std::endl;
+        /* std::cout << tok << std::endl; */
         tok = strtok(NULL, " ");
     }
+    args[token_count] = 0; // null terminate the array
 
     // time for the fun stuff now.
     int pid = fork();
     if (pid == -1) {  // error in fork
-        perror("fork - ");
+        perror("fork: ");
         exit(1);
     }
     else if (pid == 0) { // in child process
-        std::cout << "In child process." << std::endl;
-        std::cout << "Executing " << args[0] << std::endl;
+        /* std::cout << "In child process." << std::endl; */
+        /* std::cout << "Executing " << args[0] << std::endl; */
         if (execvp(args[0], args)) {
-            perror("execvp - ");
+            perror("execvp: ");
             exit(1);
         }
             
@@ -120,17 +131,17 @@ int execCommand(std::string &command) {
 
     }
     else {  // in parent
-        int status;
         if (wait(&status) == -1) {
-            perror("wait - ");
+            perror("wait: ");
+            exit(1);
         }
         status = WEXITSTATUS(status);
-        std::cout << status << " Child process is kill\n";
+        /* std::cout << status << " Child process is kill\n"; */
     }
 
     delete[] c_command;
     delete[] args;
-    return 0;
+    return status;
 }
 
 int strip(std::string &str) {
