@@ -39,7 +39,8 @@ int execCommandList(const std::string &command_list) {
     int cmd_status = 0; // keeps track of the status of the last command run
     std::string current_command = nextToken(command_list, current_ind);
     strip(current_command);
-    if (current_command == "" && command_list[current_ind+1] == 0) {
+    if (current_command == "" && (command_list[current_ind+1] == '#' ||
+                                  command_list[current_ind+1] == 0)) {
         // nothing was inputted so just move on with no error message
         execute = false;
     }
@@ -51,13 +52,15 @@ int execCommandList(const std::string &command_list) {
                          command_list[current_ind] << std::endl;
             execute = false;
         }
-        else if (command_list.substr(current_ind, strlen(CONNECTOR)) == CONNECTOR) {
+        else if (command_list.substr(current_ind, strlen(CONNECTOR)) ==
+                CONNECTOR) {
             // ';' connector was used
             current_ind += strlen(CONNECTOR);
             current_command = nextToken(command_list, current_ind);
             execute = true;
         }
-        else if(command_list.substr(current_ind, strlen(AND_CONNECTOR)) == AND_CONNECTOR) {
+        else if(command_list.substr(current_ind, strlen(AND_CONNECTOR)) ==
+                AND_CONNECTOR) {
             // "&&" connector was used
             current_ind += strlen(AND_CONNECTOR);
             if (cmd_status == 0) {
@@ -68,7 +71,8 @@ int execCommandList(const std::string &command_list) {
                 execute = false;
             }
         }
-        else if(command_list.substr(current_ind, strlen(OR_CONNECTOR)) == OR_CONNECTOR) {
+        else if(command_list.substr(current_ind, strlen(OR_CONNECTOR)) ==
+                OR_CONNECTOR) {
             // "||" connector was used
             current_ind += strlen(OR_CONNECTOR);
             if (cmd_status != 0) {
@@ -190,6 +194,11 @@ std::string nextToken(const std::string &command, int &current_ind) {
     return command.substr(start, length); // no connectors
 }
 
+/* Returns the prompt as a string. 
+ * Will always be in the format: username@hostname$
+ * TODO: Make it so that the command prompt can be easily customizable
+ *       (like bashs's PS1=)
+ */
 std::string getPrompt() {
     std::string prompt = "";
     prompt += getlogin();
@@ -202,5 +211,6 @@ std::string getPrompt() {
     }
     prompt += hostname;
     prompt +=  "$ ";
+    delete[] hostname;
     return prompt;
 }
