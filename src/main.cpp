@@ -10,6 +10,9 @@ const char *COMMENT = "#";
 const char *DELIMS[5] = {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR, 0};
 std::string nextToken(const std::string&, int &);
 int execCommandList(const std::string &);
+int execCommand(std::string &);
+void strip(std::string &);
+
 
 int main() {
     while(1) {
@@ -20,19 +23,19 @@ int main() {
         /* char *current_pos= new char[str.length()+1]; */
         /* char *cdelims = new char[delims.length()+1]; */
         /* strcpy(cdelims, delims.c_str()); */
-        /* strcpy(current_pos, str.c_str()); */
         /* pch = strtok(cdelims, " "); */
         /* std::cout << str << std::end */
         /* int start = 0; */
         /* std::string command = nextToken(str, start); */
         /* std::cout << command << std::endl; */
-        execCommandList(str);
+//        execCommandList(str);
+        execCommand(str);
     }
 }
 
 
 /* Executes the list of commands in command_list separated by connectors
- *
+ * TODO: Clean this up so it is not so long
  */
 int execCommandList(const std::string &command_list) {
     int count = 0; // keeps track of the number of commands run
@@ -81,8 +84,31 @@ int execCommandList(const std::string &command_list) {
     return 0;
 }
 
-//TODO: Memory management
-//returns the length of the current command given the start and the delims
+int execCommand(std::string &command) {
+    strip(command);
+    std::cout << command << std::endl;
+    char *c_command = new char[command.length()+1]
+    strcpy(c_command, command.c_str());
+    char *tok = strtok(c_command, " ");
+    
+}
+
+void strip(std::string &str) {
+    char *temp = new char[str.length()+1];
+    strcpy(temp, str.c_str());
+    str="";
+    char *tok = strtok(temp, " ");
+    while(tok != NULL) {
+        str += tok;
+        str += " ";
+        tok = strtok(NULL, " ");
+    }
+    delete[] temp;
+}
+
+/* Returns the current token in the command string and updates the reference
+ * variable current_ind to be the start of the next command.
+ */
 std::string nextToken(const std::string &command, int &current_ind) {
     int delim_pos = 0;
     char *current_delim = new char[3]; // = delims[delim_pos];
