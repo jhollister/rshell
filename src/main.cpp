@@ -11,7 +11,7 @@ const char *DELIMS[5] = {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR, 0};
 std::string nextToken(const std::string&, int &);
 int execCommandList(const std::string &);
 int execCommand(std::string &);
-void strip(std::string &);
+int strip(std::string &);
 
 
 int main() {
@@ -85,25 +85,28 @@ int execCommandList(const std::string &command_list) {
 }
 
 int execCommand(std::string &command) {
-    strip(command);
-    std::cout << command << std::endl;
-    char *c_command = new char[command.length()+1]
-    strcpy(c_command, command.c_str());
-    char *tok = strtok(c_command, " ");
+    int token_count = strip(command);
+    std::cout << count << " -  " << command << std::endl;
+    /* char *c_command = new char[command.length()+1] */
+    /* strcpy(c_command, command.c_str()); */
+    /* char *tok = strtok(c_command, " "); */
     
 }
 
-void strip(std::string &str) {
+int strip(std::string &str) {
     char *temp = new char[str.length()+1];
     strcpy(temp, str.c_str());
     str="";
     char *tok = strtok(temp, " ");
+    int count = 1;
     while(tok != NULL) {
         str += tok;
         str += " ";
         tok = strtok(NULL, " ");
+        count++;
     }
     delete[] temp;
+    return count;
 }
 
 /* Returns the current token in the command string and updates the reference
