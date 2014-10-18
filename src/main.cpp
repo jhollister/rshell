@@ -1,7 +1,11 @@
 #include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string>
 #include <string.h>
+#include <sys/wait.h>
+#include <sys/types.h>
 
 const char *AND_CONNECTOR = "&&";
 const char *OR_CONNECTOR =  "||";
@@ -96,6 +100,32 @@ int execCommand(std::string &command) {
         args[i] = tok;
         std::cout << tok << std::endl;
         tok = strtok(NULL, " ");
+    }
+
+    // time for the fun stuff now.
+    int pid = fork();
+    if (pid == -1) {  // error in fork
+        perror("fork - ");
+        exit(1);
+    }
+    else if (pid == 0) { // in child process
+        std::cout << "In child process." << std::endl;
+        std::cout << "Executing " << args[0] << std::endl;
+        if (execvp(args[0], args)) {
+            perror("execvp - ");
+            exit(1);
+        }
+            
+        exit(0);
+
+    }
+    else {  // in parent
+        int status;
+        if (wait(&status) == -1) {
+            perror("wait - ");
+        }
+        status = WEXITSTATUS(status);
+        std::cout << status << " Child process is kill\n";
     }
 
     delete[] c_command;
