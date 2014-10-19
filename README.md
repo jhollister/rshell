@@ -21,6 +21,7 @@ bin/rshell
 * Use the `&&` connector and the next command will only run if the previous succeeded
 * Use the `||` connector and the next commands will only run if the previous failed
 * Use `#` and everything after will be ignored by the program
+* Type `exit` at the beginning of any command to exit rshell
 
 
 ##Bugs
