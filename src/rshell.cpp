@@ -46,7 +46,7 @@ int execCommandList(const std::string &command_list) {
     int cmd_status = 0; // keeps track of the status of the last command run
     std::string current_command = nextToken(command_list, current_ind);
     strip(current_command);
-    while (execute) { //(current_command != "") {
+    while (execute) {
         cmd_status = execCommand(current_command);
         
         if((command_list.substr(current_ind, strlen(COMMENT)) == COMMENT) 
@@ -111,6 +111,9 @@ int execCommandList(const std::string &command_list) {
 int execCommand(std::string &command) {
     int status = 1; //return status of function - 0 success Nonzero failure
     int token_count = strip(command);
+    if (command == "") { // if the command is empty just return
+        return status;
+    }
     char *c_command = new char[command.length()+1];
     strcpy(c_command, command.c_str());
     char *tok = strtok(c_command, " ");
@@ -123,7 +126,7 @@ int execCommand(std::string &command) {
     args[token_count] = 0; // null terminate the array
 
     if (strcmp(args[0], "exit") == 0) { // check to see if exit was entered
-        std::cout << "exiting...\n";
+        std::cout << "exiting rshell...\n";
         exit(0);
     }
 
