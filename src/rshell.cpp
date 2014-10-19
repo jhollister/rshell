@@ -17,13 +17,12 @@ std::string nextToken(const std::string&, int &);
 int execCommandList(const std::string &);
 int execCommand(std::string &);
 int strip(std::string &);
-std::string getPrompt();
+void printPrompt();
 
 int main() {
-    std::string prompt = getPrompt();
     int status = 0;
     while(status == 0) {
-        std::cout << prompt;
+        printPrompt();
         std::string str;
         std::getline(std::cin, str);
         status = execCommandList(str);
@@ -211,11 +210,12 @@ std::string nextToken(const std::string &command, int &current_ind) {
  * Returns the prompt as a string. 
  * Will always be in the format: username@hostname$
  * If it can't find hostname prints an error and sets it to default "hostname"
+ * If the hostname is greater than 20 characters it will be truncated
  * TODO: Make it so that the command prompt can be easily customizable
  *       (like bashs's PS1=)
  * TODO: Display an error if it has trouble finding username
  */
-std::string getPrompt() {
+void printPrompt() {
     std::string prompt = "";
     prompt += getlogin();
     prompt += "@";
@@ -229,5 +229,5 @@ std::string getPrompt() {
     prompt += hostname;
     prompt +=  "$ ";
     delete[] hostname;
-    return prompt;
+    std::cout << prompt;
 }
