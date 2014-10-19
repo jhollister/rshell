@@ -6,20 +6,21 @@ Rshell is a basic shell for UNIX based operating systems written for University 
 * Can run executables located in the system's bin directories
 * Chain commands together on one line using `; && ||`
 * Comments are supported using `#`
+* Username and hostname will be diplayed at the prompt
 
 ##How to use
 Project source can be downloaded from https://github.com/jhollister/rshell.git
-To compile and run Rshell run the following commands:
----
+######To compile and run Rshell run the following commands:
+```
 git clone https://github.com/jhollister/rshell.git
 cd rshell
 make
 bin/rshell
----
+```
 * Use the `;` connector to chain multiple commands together
 * Use the `&&` connector and the next command will only run if the previous succeeded
 * Use the `||` connector and the next commands will only run if the previous failed
-* Use `#` and all text after will be ignored by the program
+* Use `#` and everything after will be ignored by the program
 
 
 ##Bugs
