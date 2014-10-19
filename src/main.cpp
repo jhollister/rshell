@@ -40,15 +40,21 @@ int execCommandList(const std::string &command_list) {
     int cmd_status = 0; // keeps track of the status of the last command run
     std::string current_command = nextToken(command_list, current_ind);
     strip(current_command);
-    if (current_command == "" && (command_list[current_ind+1] == '#' ||
-                                  command_list[current_ind+1] == 0)) {
-        // nothing was inputted so just move on with no error message
-        execute = false;
-    }
+    /* if (current_command == "" && (command_list[current_ind+1] == '#' || */
+    /*                               command_list[current_ind+1] == 0)) { */
+    /*     // nothing was inputted so just move on with no error message */
+    /*     execute = false; */
+    /* } */
     while (execute) { //(current_command != "") {
         /* std::cout << current_command << std::endl; */
         cmd_status = execCommand(current_command);
-        if (current_command == "") {
+        
+        if((command_list.substr(current_ind, strlen(COMMENT)) == COMMENT) 
+                || command_list[current_ind] == 0) {
+            // '#' comment character was used or we have executed last command
+            execute = false;
+        }
+        else if (current_command == "") {
             std::cout << "rshell: syntax error near unexpected token: " <<
                          command_list[current_ind] << std::endl;
             execute = false;
@@ -84,13 +90,8 @@ int execCommandList(const std::string &command_list) {
                 execute = false;
             }
         }
-        else if((command_list.substr(current_ind, strlen(COMMENT)) == COMMENT) 
-                || command_list[current_ind] == 0) {
-            // '#' comment character was used or we have executed last command
-            execute = false;
-        }
         else {
-            std::cout << "rshell: syntax error near: " <<
+            std::cout << "rshell: Something went wrong at: " <<
                          command_list[current_ind] << std::endl;
             execute = false;
         }
