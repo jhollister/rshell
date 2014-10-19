@@ -21,13 +21,16 @@ std::string getPrompt();
 
 int main() {
     std::string prompt = getPrompt();
-    while(1) {
+    int status = 0;
+    while(status == 0) {
         std::cout << prompt;
         std::string str;
         std::getline(std::cin, str);
-        execCommandList(str);
+        status = execCommandList(str);
     }
-    return 0;
+    //return 1 if there was an error
+    return status == -1 ? 1 : 0; 
+
 }
 
 
