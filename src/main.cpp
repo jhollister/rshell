@@ -12,6 +12,7 @@ const char *OR_CONNECTOR =  "||";
 const char *CONNECTOR = ";";
 const char *COMMENT = "#";
 const char *DELIMS[5] = {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR, 0};
+
 std::string nextToken(const std::string&, int &);
 int execCommandList(const std::string &);
 int execCommand(std::string &);
@@ -100,7 +101,7 @@ int execCommandList(const std::string &command_list) {
 }
 
 /*
- * TODO: Don't call strip since it has already been stripped
+ * TODO: Don't call strip since it has already been stripped (need token count though)
  */
 int execCommand(std::string &command) {
     int status = 0; //return status of this function - 1 failed - 0 success
