@@ -1,3 +1,13 @@
-rshell:
+#RSHELL
+=========================
+##About
 
-Rshell is a homemade command shell.
+
+##How to use
+
+##Bugs
+
+
+##License
+
+
