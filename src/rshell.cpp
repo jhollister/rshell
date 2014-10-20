@@ -49,6 +49,9 @@ int execCommandList(const std::string &command_list) {
     while (execute) {
         cmd_status = execCommand(current_command);
         
+        if (cmd_status == -1) {
+            return 1;
+        }
         if((command_list.substr(current_ind, strlen(COMMENT)) == COMMENT) 
                 || command_list[current_ind] == 0) {
             // '#' comment character was used or we have executed last command
@@ -107,6 +110,7 @@ int execCommandList(const std::string &command_list) {
  * Executes whatever is in the string 'command' with execvp
  * Can have extra whitespace in command but the command must be clear of any 
  * connectors or comment characters in order to work correctly.
+ * TODO: Fix memory leaks
  */
 int execCommand(std::string &command) {
     int status = 1; //return status of function - 0 success Nonzero failure
@@ -127,32 +131,33 @@ int execCommand(std::string &command) {
 
     if (strcmp(args[0], "exit") == 0) { // check to see if exit was entered
         std::cout << "exiting rshell...\n";
-        exit(0);
+        status = -1;
     }
 
-    // time for the fun stuff now.
-    int pid = fork();
-    if (pid == -1) {  // error in fork
-        perror("fork: ");
-        exit(1);
-    }
-    else if (pid == 0) { // in child process
-        if (execvp(args[0], args)) {
-            perror("execvp: ");
+    else {
+        // time for the fun stuff now.
+        int pid = fork();
+        if (pid == -1) {  // error in fork
+            perror("fork: ");
             exit(1);
         }
-        exit(0);
-    }
-    else {  // in parent
-        if (wait(&status) == -1) {
-            perror("wait: ");
-            exit(1);
+        else if (pid == 0) { // in child process
+            if (execvp(args[0], args) == -1) {
+                perror("execvp: ");
+                exit(1);
+            }
+            else exit(0);
         }
-        status = WEXITSTATUS(status);
+        else {  // in parent
+            if (wait(&status) == -1) {
+                perror("wait: ");
+            }
+            status = WEXITSTATUS(status);
+        }
     }
 
-    delete[] c_command;
     delete[] args;
+    delete[] c_command;
     return status;
 }
 
