@@ -110,7 +110,9 @@ int execCommandList(const std::string &command_list) {
  * Executes whatever is in the string 'command' with execvp
  * Can have extra whitespace in command but the command must be clear of any 
  * connectors or comment characters in order to work correctly.
- * TODO: Fix memory leaks
+ * Returns: 0 - succesfully executed command
+ *          > 0 - an error occurred
+ *          -1  - exit was called
  */
 int execCommand(std::string &command) {
     int status = 1; //return status of function - 0 success Nonzero failure
@@ -139,7 +141,7 @@ int execCommand(std::string &command) {
         int pid = fork();
         if (pid == -1) {  // error in fork
             perror("fork: ");
-            exit(1);
+            status = 1; //error
         }
         else if (pid == 0) { // in child process
             if (execvp(args[0], args) == -1) {
@@ -152,7 +154,9 @@ int execCommand(std::string &command) {
             if (wait(&status) == -1) {
                 perror("wait: ");
             }
-            status = WEXITSTATUS(status);
+            if (WIFEXITED(status)) {
+                status = WEXITSTATUS(status);
+            }
         }
     }
 
