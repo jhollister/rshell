@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-Wall -Werror -ansi -pedantic 
+CFLAGS=-Wall -Werror -ansi -pedantic -g 
 SOURCES=$(wildcard src/*.cpp)
 EDIR=bin
 TARGET=rshell

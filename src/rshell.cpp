@@ -35,7 +35,7 @@ int main() {
 
 /* Executes the list of commands in command_list separated by connectors
  * Uses the DELIMS global constants to determine which connector was used.
- * TODO: Clean this up so it is not so long
+ * TODO: Rewrite this function so it's easier to follow
  * TODO: Add a status return so main() can know if something went wrong.
  */
 int execCommandList(const std::string &command_list) {
@@ -49,9 +49,9 @@ int execCommandList(const std::string &command_list) {
         cmd_status = execCommand(current_command);
         
         if (cmd_status == -1) {
-            return 1;
+            return 1; //exit was called in execcommand
         }
-        if((command_list.substr(current_ind, strlen(COMMENT)) == COMMENT) 
+        else if((command_list.substr(current_ind, strlen(COMMENT)) == COMMENT) 
                 || command_list[current_ind] == 0) {
             // '#' comment character was used or we have executed last command
             execute = false;
@@ -59,7 +59,7 @@ int execCommandList(const std::string &command_list) {
         else if (current_command == "") {
             // command was empty so there was a syntax error 
             // Most likely two connectors together such as ';;' or '&& &&'
-            std::cout << "rshell: syntax error near unexpected token: " <<
+            std::cerr << "rshell: syntax error near unexpected token: " <<
                          command_list[current_ind] << std::endl;
             execute = false;
         }
@@ -95,7 +95,7 @@ int execCommandList(const std::string &command_list) {
             }
         }
         else {
-            std::cout << "rshell: Something went wrong at: " <<
+            std::cerr << "rshell: Something went wrong at: " <<
                          command_list[current_ind] << std::endl;
             execute = false;
         }
