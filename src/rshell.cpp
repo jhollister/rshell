@@ -30,7 +30,6 @@ int main() {
     }
     //return 1 if there was an error
     return status == -1 ? 1 : 0; 
-
 }
 
 
@@ -227,17 +226,21 @@ std::string nextToken(const std::string &command, int &current_ind) {
  */
 void printPrompt() {
     std::string prompt = "";
-    prompt += getlogin();
-    prompt += "@";
+    char *login = getlogin();
+    if (login != NULL) {
+        prompt += login;
+    }
+
     int host_len = 20;
     char *hostname = new char[host_len];
     if (gethostname(hostname, host_len) == -1) {
         perror("gethostname: ");
-        std::cout << "Using generic default 'hostname' instead.\n";
-        strcpy(hostname, "hostname");
     }
-    prompt += hostname;
-    prompt +=  "$ ";
+    else {
+        prompt += "@";
+        prompt += hostname;
+    }
+    prompt += "$ ";
     delete[] hostname;
     std::cout << prompt;
 }
