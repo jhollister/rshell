@@ -31,6 +31,8 @@ bin/rshell
 * Typing `Ctrl-C` after starting a program inside rshell does not close that program as expected, instead it closes Rshell. This  causes a memory leak as well since deallocation is done in the parent process and isn't able to take place.
 * `~` does not substitute for home as it does in bash
 * When bringing rshell into the foreground with `fg` after suspending it with `Ctrl-z` the prompt does not display
+* Using ctrl-z while a child process is running suspends all of rshell.
+* Character limit of 4095 characters.
 
 
 ##License
