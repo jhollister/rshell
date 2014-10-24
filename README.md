@@ -21,7 +21,7 @@ bin/rshell
 * Use the `&&` connector and the next command will only run if the previous succeeded
 * Use the `||` connector and the next commands will only run if the previous failed
 * Chain more than one command together and the commands will be read in left to right order. Everything to the right of a connector is considered one command and will not be executed depending on whether the previous command succeeded or failed. For instance: `echo test || ls ; echo done`  Only `echo test` will be executed and both `ls` and `echo done` will not.
-* Use `#` comment character and everything after will be ignored by the program
+* Use `#` and everything after will be ignored by the program
 * Type `exit` at the beginning of any command to exit rshell
 
 
