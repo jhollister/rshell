@@ -20,7 +20,8 @@ int execCommand(std::string &);
 int strip(std::string &);
 std::string getPrompt();
 
-int main() {
+int main()
+{
     int status = 0;
     std::string prompt = getPrompt();
     while(status == 0) {
@@ -30,16 +31,20 @@ int main() {
         status = execCommandList(str);
     }
     //return 1 if there was an error
-    return status == -1 ? 1 : 0; 
+    return status == -1 ? 1 : 0;
 }
 
 
 /* Executes the list of commands in command_list separated by connectors
  * Uses the DELIMS global constants to determine which connector was used.
+ * Returns: -1: And error occured and we couldn't finish the commands
+ *           0: Successfully executed commands
+ *           1: Exit was called
  * TODO: Rewrite this function so it's easier to follow
  * TODO: Add a status return so main() can know if something went wrong.
  */
-int execCommandList(const std::string &command_list) {
+int execCommandList(const std::string &command_list)
+{
     int count = 0; // keeps track of the number of commands run
     int current_ind = 0;// keeps track of the current character
     bool execute = true;
@@ -48,17 +53,16 @@ int execCommandList(const std::string &command_list) {
     strip(current_command);
     while (execute) {
         cmd_status = execCommand(current_command);
-        
         if (cmd_status == -1) {
             return 1; //exit was called in execcommand
         }
-        else if((command_list.substr(current_ind, strlen(COMMENT)) == COMMENT) 
+        else if((command_list.substr(current_ind, strlen(COMMENT)) == COMMENT)
                 || command_list[current_ind] == 0) {
             // '#' comment character was used or we have executed last command
             execute = false;
         }
         else if (current_command == "") {
-            // command was empty so there was a syntax error 
+            // command was empty so there was a syntax error
             // Most likely two connectors together such as ';;' or '&& &&'
             std::cerr << "rshell: syntax error near unexpected token: " <<
                          command_list[current_ind] << std::endl;
@@ -108,13 +112,14 @@ int execCommandList(const std::string &command_list) {
 
 /*
  * Executes whatever is in the string 'command' with execvp
- * Can have extra whitespace in command but the command must be clear of any 
+ * Can have extra whitespace in command but the command must be clear of any
  * connectors or comment characters in order to work correctly.
  * Returns: 0 - succesfully executed command
  *          > 0 - an error occurred
  *          -1  - exit was called
  */
-int execCommand(std::string &command) {
+int execCommand(std::string &command)
+{
     int status = 1; //return status of function - 0 success Nonzero failure
     int token_count = strip(command);
     if (command == "") { // if the command is empty just return
@@ -123,7 +128,7 @@ int execCommand(std::string &command) {
     char *c_command = new char[command.length()+1];
     strcpy(c_command, command.c_str());
     char *tok = strtok(c_command, " ");
-    
+
     char **args = new char*[token_count+1];
     for (int i = 0; i < token_count; i++) {
         args[i] = tok;
@@ -167,11 +172,12 @@ int execCommand(std::string &command) {
 
 /*
  * Strips the extra whitespace from a string and returns the number of tokens
- * in the string. 
+ * in the string.
  * Input: "   This     is    a    string  "
  * Output string: "This is a string" Output int: 4
  */
-int strip(std::string &str) {
+int strip(std::string &str)
+{
     char *temp = new char[str.length()+1];
     strcpy(temp, str.c_str());
     str="";
@@ -192,7 +198,8 @@ int strip(std::string &str) {
  * variable current_ind to be the index of the start of the next command.
  * Uses global constant DELIMS to determine what separates each command.
  */
-std::string nextToken(const std::string &command, int &current_ind) {
+std::string nextToken(const std::string &command, int &current_ind)
+{
     int delim_pos = 0;
     char *current_delim = new char[3];
     int start = current_ind;
@@ -200,7 +207,7 @@ std::string nextToken(const std::string &command, int &current_ind) {
     while (command[current_ind] != 0) {
         while (DELIMS[delim_pos] != NULL) {
             strcpy(current_delim, DELIMS[delim_pos]);
-            if (strcmp(command.substr(current_ind, 
+            if (strcmp(command.substr(current_ind,
                                       strlen(current_delim)).c_str(),
                        current_delim) == 0) {
                 delete[] current_delim;
@@ -217,15 +224,16 @@ std::string nextToken(const std::string &command, int &current_ind) {
 }
 
 /*
- * Returns the prompt as a string. 
+ * Returns the prompt as a string.
  * Will always be in the format: username@hostname$
  * If there is an error getting username no username will be displayed
- * If it can't find hostname prints an error and does not display a hostname 
+ * If it can't find hostname prints an error and does not display a hostname
  * If the hostname is greater than 20 characters it will be truncated
  * TODO: Make it so that the command prompt can be easily customizable
  *       (like bashs's PS1=)
  */
-std::string getPrompt() {
+std::string getPrompt()
+{
     std::string prompt = "";
     char *login = getlogin();
     if (login == NULL) {
@@ -241,6 +249,7 @@ std::string getPrompt() {
         perror("gethostname: ");
     }
     else {
+
         if (login != NULL) prompt += "@";
         prompt += hostname;
     }
