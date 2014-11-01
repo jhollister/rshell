@@ -146,14 +146,13 @@ int execCommand(std::string &command)
         int pid = fork();
         if (pid == -1) {  // error in fork
             perror("fork: ");
-            status = 1; //error
+            exit(EXIT_FAILURE);
         }
         else if (pid == 0) { // in child process
             if (execvp(args[0], args) == -1) {
                 perror("execvp: ");
-                exit(1);
+                _exit(EXIT_FAILURE);
             }
-            else exit(0);
         }
         else {  // in parent
             if (wait(&status) == -1) {
