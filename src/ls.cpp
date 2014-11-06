@@ -6,12 +6,17 @@
 
 
 int getFlags(int argc, char** argv);
+int getFiles(int argc, char** argv, char** files);
 
 int main(int argc, char** argv)
 {
     argv++;
     argc--;
     getFlags(argc, argv);
+    char** files = new char*[argc];
+    getFiles(argc, argv, files);
+
+    delete[] files;
     return 0;
 }
 
@@ -25,7 +30,6 @@ int getFlags(int size, char** argv)
         if (argv[i][0] == '-') {
             char *arg = argv[i] + 1;
             while (*arg) {
-                std::cout << arg[0] << std::endl;
                 switch (arg[0]) {
                     case 'a':
                         flags |= F_ALL;
@@ -45,3 +49,18 @@ int getFlags(int size, char** argv)
     }
     return flags;
 }
+
+// Finds non-flag arguments and add them to the file list.
+// Returns the size of the list.
+int getFiles(int argc, char** argv, char** files) {
+    int size = 0;
+    for (int i = 0; i < argc; i++) {
+        if (argv[i][0] != '-') {
+            files[size++] = argv[i];
+            std::cout << argv[i] << std::endl;
+        }
+    }
+    return size;
+}
+
+
