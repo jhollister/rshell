@@ -1,4 +1,5 @@
 #include <iostream>
+#include <dirent.h>
 
 #define F_ALL     0x1
 #define F_LIST    0x2
@@ -7,6 +8,8 @@
 
 int getFlags(int argc, char** argv);
 int getFiles(int argc, char** argv, char** files);
+void printFiles(int size, char** files, int flags);
+void printFile(char* file, int flags);
 
 int main(int argc, char** argv)
 {
@@ -15,7 +18,8 @@ int main(int argc, char** argv)
     getFlags(argc, argv);
     char** files = new char*[argc];
     getFiles(argc, argv, files);
-
+    DIR* dir = opendir(files[0]);
+    std::cout << readdir(dir)->d_name << std::endl;
     delete[] files;
     return 0;
 }
@@ -52,12 +56,12 @@ int getFlags(int size, char** argv)
 
 // Finds non-flag arguments and add them to the file list.
 // Returns the size of the list.
-int getFiles(int argc, char** argv, char** files) {
+int getFiles(int argc, char** argv, char** files)
+{
     int size = 0;
     for (int i = 0; i < argc; i++) {
         if (argv[i][0] != '-') {
             files[size++] = argv[i];
-            std::cout << argv[i] << std::endl;
         }
     }
     return size;
