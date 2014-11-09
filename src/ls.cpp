@@ -8,6 +8,7 @@
 #include <grp.h>
 #include <unistd.h>
 #include <string>
+#include <sstream>
 
 
 #define F_ALL     0x1
@@ -20,12 +21,16 @@ struct file_output {
 };
 
 int getFlags(int argc, char** argv);
-int getFiles(int argc, char** argv, char** files);
-int addFile(const char* file, int flags);
-std::string getFileType(struct stat& sb);
-std::string getFilePermissions(struct stat& sb);
-std::string getUser(struct stat& sb);
-std::string getGroup(struct stat& sb);
+int getArgs(int argc, char** argv, char** files);
+int printDetails(const std::string path);
+std::string getFileType(const std::string path);
+std::string getFileType(struct stat& stat_buf);
+std::string getFilePermissions(struct stat& stat_buf);
+std::string getFileUser(struct stat& stat_buf);
+std::string getFileGroup(struct stat& stat_buf);
+std::string getFileLinks(struct stat& stat_buf);
+std::string getFileTime(struct stat& stat_buf);
+std::string getFileSize(struct stat& stat_buf);
 
 
 
@@ -36,49 +41,67 @@ int main(int argc, char** argv)
     argc--;
     int flags = getFlags(argc, argv);
     char** files = new char*[argc];
-    getFiles(argc, argv, files);
-    if (argc == 0) {
-        addFile(".", flags);
-    }
-    else {
-        for (int i = 0; i < argc; i++) {
-            addFile(files[i], flags);
-        }
-    }
-    //char *dirName = file
-    //DIR *dirp = opendir(dirName);
-    //if (dirp == NULL) {
-        //perror("opendir");
-        //exit(EXIT_FAILURE);
-    //}
-    //dirent *direntp;
-    //while ((direntp = readdir(dirp)))
-        //std::cout << direntp->d_name << std::endl;  // use stat here to find attributes of file
-    //closedir(dirp);
+    int arg_length = getArgs(argc, argv, files);
+    printDetails("Makefile");
+    flags++;
+    arg_length++;
     delete[] files;
     return 0;
 }
 
-int addFile(const char* path, int flags) {
+void printDir(const char* path, int flags) {
+    DIR *dirp = opendir(path);
+    if (dirp == NULL) {
+        perror("opendir");
+        exit(EXIT_FAILURE);
+    }
+    dirent *direntp;
+    while ((direntp = readdir(dirp)))
+        std::cout << direntp->d_name << std::endl;  // use stat here to find attributes of file
+    closedir(dirp);
+}
+
+
+int printDetails(const std::string path) {
     struct stat stat_buf;
-    if (stat(path, &stat_buf) == -1) {
-       perror("stat");
-       return -1;
+    if (stat(path.c_str(), &stat_buf) == -1) {
+        perror("stat");
+        return -1;
     }
     std::cout << getFileType(stat_buf);
     std::cout << getFilePermissions(stat_buf) << " ";
-    std::cout << stat_buf.st_nlink << " ";
-    std::cout << getUser(stat_buf) << " ";
-    std::cout << getGroup(stat_buf) << " ";
-    std::cout << stat_buf.st_blksize << " ";
-    std::cout << ctime(&stat_buf.st_mtime) << " ";
-
-    std::cout << std::endl;
+    std::cout << getFileLinks(stat_buf) << " ";
+    std::cout << getFileUser(stat_buf) << " ";
+    std::cout << getFileGroup(stat_buf) << " ";
+    std::cout << getFileSize(stat_buf) << " ";
+    std::cout << getFileTime(stat_buf) << " ";
     return 0;
 }
 
-std::string getGroup(struct stat& sb) {
-    struct group* grp = getgrgid(sb.st_gid);
+std::string getFileTime(struct stat& stat_buf) {
+    std::string time(ctime(&stat_buf.st_mtime));
+    return time;
+}
+
+std::string getFileSize(struct stat& stat_buf) {
+    std::string size;
+    std::ostringstream convert;
+    convert << (long) stat_buf.st_size;
+    size = convert.str();
+    return size;
+}
+
+std::string getFileLinks(struct stat& stat_buf) {
+    std::string links;
+    std::ostringstream convert;
+    convert << (long) stat_buf.st_nlink;
+    links = convert.str();
+    return links;
+}
+
+
+std::string getFileGroup(struct stat& stat_buf) {
+    struct group* grp = getgrgid(stat_buf.st_gid);
     std::string group;
     if (!grp) {
         perror("getpwuid");
@@ -89,8 +112,8 @@ std::string getGroup(struct stat& sb) {
     }
     return group;
 }
-std::string getUser(struct stat& sb) {
-    struct passwd* pwd = getpwuid(sb.st_uid);
+std::string getFileUser(struct stat& stat_buf) {
+    struct passwd* pwd = getpwuid(stat_buf.st_uid);
     std::string username;
     if (!pwd) {
         perror("getpwduid");
@@ -175,6 +198,16 @@ std::string getFileType(struct stat& sb) {
     return file_type;
 }
 
+
+std::string getFileType(const std::string path) {
+    struct stat sb;
+    if (stat(path.c_str(), &sb) == -1) {
+       perror("stat");
+       return "?";
+    }
+    return getFileType(sb);
+}
+
 // Loops through arguments and and sets flags
 // Returns -1 if an undefined flag is passed
 int getFlags(int size, char** argv)
@@ -206,7 +239,7 @@ int getFlags(int size, char** argv)
 
 // Finds non-flag arguments and add them to the file list.
 // Returns the size of the list.
-int getFiles(int argc, char** argv, char** files)
+int getArgs(int argc, char** argv, char** files)
 {
     int size = 0;
     for (int i = 0; i < argc; i++) {
@@ -216,5 +249,3 @@ int getFiles(int argc, char** argv, char** files)
     }
     return size;
 }
-
-
