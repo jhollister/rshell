@@ -26,7 +26,8 @@ void printDir(const string, int flags);
 void printFile(const string, int longest, int flags);
 void printFile(const string,int flags);
 void printFileList(const vector<string> &file_list, const string &parent, int flags);
-int printDetails(const string path);
+void printDetails(const string path, int flags);
+void printDetails(const vector<string> &file_names, const string &parent, int flags);
 bool isDir(const string path);
 void sortFiles(vector<string> &file_list);
 bool fileCompare(string i, string j);
@@ -91,7 +92,8 @@ void printDir(const string path, int flags) {
     }
     closedir(dirp);
     sortFiles(file_names);
-    printFileList(file_names, path, flags);
+    //printFileList(file_names, path, flags);
+    printDetails(file_names, path, flags);
 }
 
 void printFileList(const vector<string> &file_list, const string &parent, int flags) {
@@ -126,19 +128,64 @@ void printFile(const string file_name, int flags) {
 
 
 
-int printDetails(const string path) {
+void printDetails(const string path, int flags) {
     struct stat stat_buf;
     if (stat(path.c_str(), &stat_buf) == -1) {
         perror("stat");
-        return -1;
+        return;
     }
-    cout << getFilePermissions(stat_buf) << " ";
-    cout << setw(3) << getFileLinks(stat_buf) << " ";
-    cout << setw(15) << getFileUser(stat_buf) << " ";
-    cout << setw(15) << getFileGroup(stat_buf) << " ";
-    cout << setw(5) << getFileSize(stat_buf) << " ";
-    cout << setw(10) << getFileTime(stat_buf) << " ";
-    return 0;
+    cout << getFileType(stat_buf) << getFilePermissions(stat_buf) << " ";
+    cout << getFileLinks(stat_buf) << " ";
+    cout << getFileUser(stat_buf) << " ";
+    cout << getFileGroup(stat_buf) << " ";
+    cout << getFileSize(stat_buf) << " ";
+    cout << getFileTime(stat_buf) << " ";
+}
+
+void printDetails(const vector<string> &file_names, const string &parent, int flags) {
+    string parent_slash = parent;
+    if (parent_slash[parent.length()] != '/')
+        parent_slash += "/";
+    if (file_names.size() == 1) {
+        //no formatting necessary
+        printDetails(parent_slash.append(file_names[0]), flags);
+        return;
+    }
+    struct stat stat_buf;
+    vector<string> perms(file_names.size());
+    vector<string> links(file_names.size());
+    vector<string> users(file_names.size());
+    vector<string> groups(file_names.size());
+    vector<string> sizes(file_names.size());
+    vector<string> times(file_names.size());
+    for (int i = 0; i < (int)file_names.size(); i++) {
+        string full_path = parent_slash;
+        full_path += file_names[i];
+        if (stat(full_path.c_str(), &stat_buf) == -1) {
+            perror("stat");
+            return;
+        }
+        //storing filetype in permissions as one "word"
+        perms[i] = getFileType(stat_buf);
+        perms[i] += getFilePermissions(stat_buf);
+        links[i] = getFileLinks(stat_buf);
+        users[i] = getFileUser(stat_buf);
+        groups[i] = getFileGroup(stat_buf);
+        sizes[i] = getFileSize(stat_buf);
+        times[i] = getFileTime(stat_buf);
+    }
+    //now loop through and print, setting the correct width
+    for (int i = 0; i < (int)file_names.size(); i++) {
+        cout << left;
+        cout << setw(longestString(perms)) << perms[i] << " ";
+        cout << setw(longestString(links)) << links[i] << " ";
+        cout << setw(longestString(users)) << users[i] << " ";
+        cout << setw(longestString(groups)) << groups[i] << " ";
+        cout << setw(longestString(sizes)) << sizes[i] << " ";
+        cout << setw(longestString(times)) << times[i] << " ";
+        printFile(file_names[i], flags ^ F_LIST); //clear flag so details aren't printed
+        cout << endl;
+    }
 }
 
 string getFileTime(struct stat& stat_buf) {
