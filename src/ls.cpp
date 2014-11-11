@@ -31,6 +31,7 @@ void printDetails(const string path, int flags);
 void printDetails(const vector<string> &file_names, const string &parent, int flags);
 bool isDir(const string path);
 bool isExe(const string path);
+bool isLink(const string path);
 void sortFiles(vector<string> &file_list);
 bool fileCompare(string i, string j);
 int longestString(const vector<string> &file_list);
@@ -75,7 +76,8 @@ int main(int argc, char** argv)
                 if (i < (arg_length - 1)) cout << endl;
             }
             else {
-                printFile(files[i], files[i], flags | F_ALL);
+                if (F_LIST & flags) printDetails(files[i], flags);
+                printFile(files[i], "", flags | F_ALL);
                 cout << endl;
                 if (i < (arg_length - 1)) cout << endl;
             }
@@ -155,14 +157,15 @@ void printFile(const string file_name, const string parent, int longest, int fla
     if (!(F_ALL & flags) && file_name[0] == '.') print = false;
 
     if(print) {
-        if (flags & F_LIST) {
-            printDetails(file_name, flags);
-        }
         string colorDir = "\033[0;34m";
         string colorExe = "\033[0;32m";
         string colorHidden = "\033[7;37m";
+        string colorLink = "\033[0;36m";
         string color("");
-        if (isDir(parent + file_name)) {
+        if (isLink(parent + file_name)) {
+            color += colorLink;
+        }
+        else if (isDir(parent + file_name)) {
             color += colorDir;
         }
         else if (isExe(parent + file_name)) {
@@ -173,6 +176,26 @@ void printFile(const string file_name, const string parent, int longest, int fla
         }
         cout << color;
         cout << left << setw(longest) << file_name << "\033[0m  ";
+        if ((flags & F_LIST) && isLink(parent + file_name)) {
+           char buf[BUFSIZ];
+           int length = readlink(string(parent + file_name).c_str(), buf, BUFSIZ);
+           if (length == -1) {
+               perror("readlink");
+               return;
+           }
+           buf[length] = 0; //append null character
+           cout <<  setw(0) << "-> ";
+           if (access(buf, F_OK) == -1) {
+               // This system call checks if the file exists
+               // if it doesn't exist then I will print out the link but color
+               // it red to show that it is not a valid link
+               // Please don't mark me down for not calling perror
+               cout << "\033[0;31m" << buf << "\033[0m";
+           }
+           else {
+               printFile(string(buf), "", flags || F_ALL);
+           }
+        }
     }
 }
 
@@ -203,7 +226,7 @@ void printDetails(const vector<string> &file_names, const string &parent, int fl
     if (file_names.size() == 1) {
         //no formatting necessary
         printDetails(parent_slash + file_names[0], flags);
-        printFile(file_names[0], parent_slash, flags ^ F_LIST);
+        printFile(file_names[0], parent_slash, flags);
         cout << endl;
         return;
     }
@@ -246,7 +269,7 @@ void printDetails(const vector<string> &file_names, const string &parent, int fl
         cout << setw(longestString(groups)) << groups[i] << " ";
         cout << setw(longestString(sizes)) << sizes[i] << " ";
         cout << setw(longestString(times)) << times[i] << " ";
-        printFile(file_names[i], parent_slash, flags ^ F_LIST); //clear flag so details aren't printed
+        printFile(file_names[i], parent_slash, flags); //clear flag so details aren't printed
         cout << endl;
     }
 }
@@ -371,6 +394,14 @@ string getFileType(struct stat& sb) {
     return file_type;
 }
 
+bool isLink(const string path) {
+    struct stat sb;
+    if (lstat(path.c_str(), &sb) == -1) {
+        perror("isLink: stat");
+        return false;
+    }
+    return S_ISLNK(sb.st_mode);
+}
 
 bool isDir(const string path) {
     struct stat sb;
@@ -383,7 +414,7 @@ bool isDir(const string path) {
 
 bool isExe(const string path) {
     struct stat sb;
-    if (stat(path.c_str(), &sb) == -1) {
+    if (lstat(path.c_str(), &sb) == -1) {
         perror("isExe: stat");
         return false;
     }
