@@ -89,9 +89,9 @@ void printDir(const string path, int flags) {
         file_names.push_back(direntp->d_name);
         //if(isDir(path.append(direntp->d_name)) && (flag & F_RECURSE))
     }
+    closedir(dirp);
     sortFiles(file_names);
     printFileList(file_names, path, flags);
-    closedir(dirp);
 }
 
 void printFileList(const vector<string> &file_list, const string &parent, int flags) {
