@@ -130,7 +130,7 @@ void printFile(const string file_name, int flags) {
 
 void printDetails(const string path, int flags) {
     struct stat stat_buf;
-    if (stat(path.c_str(), &stat_buf) == -1) {
+    if (lstat(path.c_str(), &stat_buf) == -1) {
         perror("stat");
         return;
     }
@@ -163,7 +163,7 @@ void printDetails(const vector<string> &file_names, const string &parent, int fl
     for (int i = 0; i < (int)file_names.size(); i++) {
         string full_path = parent_slash;
         full_path += file_names[i];
-        if (stat(full_path.c_str(), &stat_buf) == -1) {
+        if (lstat(full_path.c_str(), &stat_buf) == -1) {
             perror("stat");
             return;
         }
@@ -183,7 +183,7 @@ void printDetails(const vector<string> &file_names, const string &parent, int fl
     cout << "total " << total << endl;
     //now loop through and print, setting the correct width
     for (int i = 0; i < (int)file_names.size(); i++) {
-        cout << left;
+        cout << right;
         cout << setw(longestString(perms)) << perms[i] << " ";
         cout << setw(longestString(links)) << links[i] << " ";
         cout << setw(longestString(users)) << users[i] << " ";
@@ -221,7 +221,7 @@ string getFileGroup(struct stat& stat_buf) {
     struct group* grp = getgrgid(stat_buf.st_gid);
     string group;
     if (!grp) {
-        perror("getpwuid");
+        perror("getgrgid");
         group = "?";
     }
     else {
