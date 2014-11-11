@@ -33,6 +33,7 @@ void sortFiles(vector<string> &file_list);
 bool fileCompare(string i, string j);
 int longestString(const vector<string> &file_list);
 int charCount(const vector<string> &file_list);
+void removeDotfiles(vector<string> &file_list);
 string getFileType(struct stat& stat_buf);
 string getFilePermissions(struct stat& stat_buf);
 string getFileUser(struct stat& stat_buf);
@@ -61,12 +62,14 @@ int main(int argc, char** argv)
     else {
         for (int i = 0; i < arg_length; i++) {
             if (isDir(files[i])) {
-                if (arg_length > 1) cout << files[i] << ":" << endl;
+                if (arg_length > 1  && !(flags & F_RECURSE)) {
+                    cout << files[i] << ":" << endl;
+                }
                 printDir(files[i], flags);
                 if (i < (arg_length - 1)) cout << endl;
             }
             else {
-                printFile(files[i], flags & F_ALL);
+                printFile(files[i], flags | F_ALL);
                 cout << endl;
                 if (i < (arg_length - 1)) cout << endl;
             }
@@ -78,35 +81,60 @@ int main(int argc, char** argv)
 }
 
 void printDir(const string path, int flags) {
+    string full_path = path;
+    if (path[path.length() - 1] != '/') {
+        full_path += "/";
+    }
+    if (flags & F_RECURSE) {
+        cout << path <<  ":" << endl;
+    }
     vector<string> file_names;
     vector<string> dir_list;
     DIR *dirp = opendir(path.c_str());
     if (dirp == NULL) {
-        perror("opendir");
+        perror("printDir: opendir");
         exit(EXIT_FAILURE);
     }
     dirent *direntp;
     while ((direntp = readdir(dirp))) {
+        string dir_path = full_path + direntp->d_name;
         file_names.push_back(direntp->d_name);
-        //if(isDir(path.append(direntp->d_name)) && (flag & F_RECURSE))
+        if ( (flags & F_RECURSE) && isDir(dir_path)) {
+            if ((string(direntp->d_name) != ".") && (string(direntp->d_name) != "..")) {
+                dir_list.push_back(direntp->d_name);
+            }
+        }
     }
     closedir(dirp);
+    sortFiles(dir_list);
     sortFiles(file_names);
-    //printFileList(file_names, path, flags);
-    printDetails(file_names, path, flags);
+    if (!(flags & F_ALL)) {
+        removeDotfiles(file_names);
+        removeDotfiles(dir_list);
+    }
+    if (!file_names.empty()) {
+        if (flags & F_LIST) {
+            printDetails(file_names, full_path, flags);
+        }
+        else {
+            printFileList(file_names, full_path, flags);
+        }
+    }
+    // recursive listings
+    if (!dir_list.empty()) {
+        for (int i = 0; i < (int) dir_list.size(); i++) {
+            cout << endl;
+            printDir(full_path + dir_list[i], flags);
+        }
+    }
 }
 
 void printFileList(const vector<string> &file_list, const string &parent, int flags) {
     int longest = longestString(file_list);
     int term_width = 80;//assume terminal width of 80 characters
     int line_break = term_width / longest;
+    if (line_break == 0) line_break++;
     for (int i = 0; i < (int)file_list.size(); i++) {
-        string full_path = parent;
-        if (parent[parent.length()] != '/') {
-            full_path += "/";
-        }
-        full_path += file_list[i];
-        //printDetails(full_path);
         if (charCount(file_list) < term_width) {
             printFile(file_list[i], flags);
         }
@@ -119,7 +147,15 @@ void printFileList(const vector<string> &file_list, const string &parent, int fl
 }
 
 void printFile(const string file_name, int longest, int flags) {
-    cout << left <<  setw(longest) << file_name << "  ";
+    bool print = true;
+    if (!(F_ALL & flags) && file_name[0] == '.') print = false;
+
+    if(print) {
+        if (flags & F_LIST) {
+            printDetails(file_name, flags);
+        }
+        cout << left <<  setw(longest) << file_name << "  ";
+    }
 }
 
 void printFile(const string file_name, int flags) {
@@ -131,7 +167,7 @@ void printFile(const string file_name, int flags) {
 void printDetails(const string path, int flags) {
     struct stat stat_buf;
     if (lstat(path.c_str(), &stat_buf) == -1) {
-        perror("stat");
+        perror("printDetail: stat");
         return;
     }
     cout << getFileType(stat_buf) << getFilePermissions(stat_buf) << " ";
@@ -144,7 +180,7 @@ void printDetails(const string path, int flags) {
 
 void printDetails(const vector<string> &file_names, const string &parent, int flags) {
     string parent_slash = parent;
-    if (parent_slash[parent.length()] != '/')
+    if (parent_slash[parent.length() - 1] != '/')
         parent_slash += "/";
     if (file_names.size() == 1) {
         //no formatting necessary
@@ -164,7 +200,7 @@ void printDetails(const vector<string> &file_names, const string &parent, int fl
         string full_path = parent_slash;
         full_path += file_names[i];
         if (lstat(full_path.c_str(), &stat_buf) == -1) {
-            perror("stat");
+            perror("printDetails: stat");
             return;
         }
         //storing filetype in permissions as one "word"
@@ -316,10 +352,10 @@ string getFileType(struct stat& sb) {
 }
 
 
-bool isDir(string path) {
+bool isDir(const string path) {
     struct stat sb;
     if (stat(path.c_str(), &sb) == -1) {
-       perror("stat");
+       perror("isDir: stat");
        return false;
     }
     return S_ISDIR(sb.st_mode);
@@ -405,6 +441,15 @@ bool fileCompare(string i, string j) {
     transform(first.begin(), first.end(), first.begin(), ::toupper);
     transform(second.begin(), second.end(), second.begin(), ::toupper);
     return first < second;
+}
+
+void removeDotfiles(vector<string> &file_list) {
+    for (int i = 0; i < (int) file_list.size(); i++) {
+        if (file_list[i][0] == '.') {
+            file_list.erase(file_list.begin()+i);
+            i--;
+        }
+    }
 }
 
 int longestString(const vector<string> &file_list) {
