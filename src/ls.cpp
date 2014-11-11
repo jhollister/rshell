@@ -22,7 +22,7 @@
 using namespace std;
 
 int getFlags(int argc, char** argv);
-int getArgs(int argc, char** argv, char** files);
+int getArgs(int argc, char** argv, vector<string> &files);
 void printDir(const string, int flags);
 void printFile(const string, const string parent,int longest, int flags);
 void printFile(const string,const string parent,int flags);
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 {
     argv++;
     argc--;
-    char** files = new char*[argc];
+    vector<string> files;
     int flags = getFlags(argc, argv);
     if (flags == -1) {
         cerr << "Undefined flag passed\n";
@@ -64,7 +64,10 @@ int main(int argc, char** argv)
     }
     else {
         for (int i = 0; i < arg_length; i++) {
-            if (isDir(files[i])) {
+            if (access(files[i].c_str(), F_OK) == -1) {
+                perror(string("access: " + files[i]).c_str());
+            }
+            else if (isDir(files[i])) {
                 if (arg_length > 1  && !(flags & F_RECURSE)) {
                     cout << files[i] << ":" << endl;
                 }
@@ -78,8 +81,6 @@ int main(int argc, char** argv)
             }
         }
     }
-
-    delete[] files;
     return 0;
 }
 
@@ -420,12 +421,13 @@ int getFlags(int size, char** argv)
 
 // Finds non-flag arguments and add them to the file list.
 // Returns the size of the list.
-int getArgs(int argc, char** argv, char** files)
+int getArgs(int argc, char** argv, vector<string> &files)
 {
     int size = 0;
     for (int i = 0; i < argc; i++) {
         if (argv[i][0] != '-') {
-            files[size++] = argv[i];
+            files.push_back(argv[i]);
+            size++;
         }
     }
     return size;
