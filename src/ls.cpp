@@ -20,11 +20,6 @@
 
 using namespace std;
 
-struct file_output {
-    string file_name;
-    string file_details;
-};
-
 int getFlags(int argc, char** argv);
 int getArgs(int argc, char** argv, char** files);
 void printDir(const string, int flags);
