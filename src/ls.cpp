@@ -7,6 +7,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -23,17 +24,19 @@ using namespace std;
 int getFlags(int argc, char** argv);
 int getArgs(int argc, char** argv, char** files);
 void printDir(const string, int flags);
-void printFile(const string, int longest, int flags);
-void printFile(const string,int flags);
+void printFile(const string, const string parent,int longest, int flags);
+void printFile(const string,const string parent,int flags);
 void printFileList(const vector<string> &file_list, const string &parent, int flags);
 void printDetails(const string path, int flags);
 void printDetails(const vector<string> &file_names, const string &parent, int flags);
 bool isDir(const string path);
+bool isExe(const string path);
 void sortFiles(vector<string> &file_list);
 bool fileCompare(string i, string j);
 int longestString(const vector<string> &file_list);
 int charCount(const vector<string> &file_list);
 void removeDotfiles(vector<string> &file_list);
+int getTerminalWidth();
 string getFileType(struct stat& stat_buf);
 string getFilePermissions(struct stat& stat_buf);
 string getFileUser(struct stat& stat_buf);
@@ -69,7 +72,7 @@ int main(int argc, char** argv)
                 if (i < (arg_length - 1)) cout << endl;
             }
             else {
-                printFile(files[i], flags | F_ALL);
+                printFile(files[i], files[i], flags | F_ALL);
                 cout << endl;
                 if (i < (arg_length - 1)) cout << endl;
             }
@@ -130,23 +133,23 @@ void printDir(const string path, int flags) {
 }
 
 void printFileList(const vector<string> &file_list, const string &parent, int flags) {
-    int longest = longestString(file_list);
-    int term_width = 80;//assume terminal width of 80 characters
+    int longest = longestString(file_list) + 2; //add two to account for spaces
+    int term_width = getTerminalWidth() - 2;
     int line_break = term_width / longest;
     if (line_break == 0) line_break++;
     for (int i = 0; i < (int)file_list.size(); i++) {
         if (charCount(file_list) < term_width) {
-            printFile(file_list[i], flags);
+            printFile(file_list[i],parent, flags);
         }
         else {
             if (i % line_break == 0 && i != 0) cout << endl;
-            printFile(file_list[i], longest,flags);
+            printFile(file_list[i], parent, longest,flags);
         }
     }
     cout << endl;
 }
 
-void printFile(const string file_name, int longest, int flags) {
+void printFile(const string file_name, const string parent, int longest, int flags) {
     bool print = true;
     if (!(F_ALL & flags) && file_name[0] == '.') print = false;
 
@@ -154,12 +157,26 @@ void printFile(const string file_name, int longest, int flags) {
         if (flags & F_LIST) {
             printDetails(file_name, flags);
         }
-        cout << left <<  setw(longest) << file_name << "  ";
+        string colorDir = "\033[0;34m";
+        string colorExe = "\033[0;32m";
+        string colorHidden = "\033[7;37m";
+        string color("");
+        if (isDir(parent + file_name)) {
+            color += colorDir;
+        }
+        else if (isExe(parent + file_name)) {
+            color += colorExe;
+        }
+        if (file_name[0] == '.') {
+            color += colorHidden;
+        }
+        cout << color;
+        cout << left << setw(longest) << file_name << "\033[0m  ";
     }
 }
 
-void printFile(const string file_name, int flags) {
-    printFile(file_name, 0, flags);
+void printFile(const string file_name, const string parent, int flags) {
+    printFile(file_name, parent, 0, flags);
 }
 
 
@@ -167,7 +184,7 @@ void printFile(const string file_name, int flags) {
 void printDetails(const string path, int flags) {
     struct stat stat_buf;
     if (lstat(path.c_str(), &stat_buf) == -1) {
-        perror("printDetail: stat");
+        perror("printDetails: stat");
         return;
     }
     cout << getFileType(stat_buf) << getFilePermissions(stat_buf) << " ";
@@ -184,7 +201,9 @@ void printDetails(const vector<string> &file_names, const string &parent, int fl
         parent_slash += "/";
     if (file_names.size() == 1) {
         //no formatting necessary
-        printDetails(parent_slash.append(file_names[0]), flags);
+        printDetails(parent_slash + file_names[0], flags);
+        printFile(file_names[0], parent_slash, flags ^ F_LIST);
+        cout << endl;
         return;
     }
     struct stat stat_buf;
@@ -226,7 +245,7 @@ void printDetails(const vector<string> &file_names, const string &parent, int fl
         cout << setw(longestString(groups)) << groups[i] << " ";
         cout << setw(longestString(sizes)) << sizes[i] << " ";
         cout << setw(longestString(times)) << times[i] << " ";
-        printFile(file_names[i], flags ^ F_LIST); //clear flag so details aren't printed
+        printFile(file_names[i], parent_slash, flags ^ F_LIST); //clear flag so details aren't printed
         cout << endl;
     }
 }
@@ -361,6 +380,15 @@ bool isDir(const string path) {
     return S_ISDIR(sb.st_mode);
 }
 
+bool isExe(const string path) {
+    struct stat sb;
+    if (stat(path.c_str(), &sb) == -1) {
+        perror("isExe: stat");
+        return false;
+    }
+    return (sb.st_mode & S_IXUSR);
+}
+
 // Loops through arguments and and sets flags
 // Returns -1 if an undefined flag is passed
 int getFlags(int size, char** argv)
@@ -401,6 +429,12 @@ int getArgs(int argc, char** argv, char** files)
         }
     }
     return size;
+}
+
+int getTerminalWidth() {
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    return w.ws_col;
 }
 
 void sortFiles(vector<string> &file_list) {
