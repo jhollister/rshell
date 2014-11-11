@@ -158,6 +158,8 @@ void printDetails(const vector<string> &file_names, const string &parent, int fl
     vector<string> groups(file_names.size());
     vector<string> sizes(file_names.size());
     vector<string> times(file_names.size());
+
+    int total = 0;
     for (int i = 0; i < (int)file_names.size(); i++) {
         string full_path = parent_slash;
         full_path += file_names[i];
@@ -173,7 +175,12 @@ void printDetails(const vector<string> &file_names, const string &parent, int fl
         groups[i] = getFileGroup(stat_buf);
         sizes[i] = getFileSize(stat_buf);
         times[i] = getFileTime(stat_buf);
+        //add to total dividing blocks by 2 because ls gives blocks in
+        //1024 increments and st_blocks in 512 byte increments
+        total += stat_buf.st_blocks / 2;
     }
+
+    cout << "total " << total << endl;
     //now loop through and print, setting the correct width
     for (int i = 0; i < (int)file_names.size(); i++) {
         cout << left;
