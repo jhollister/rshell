@@ -9,29 +9,41 @@
 #include <unistd.h>
 #include <string>
 #include <sstream>
+#include <vector>
+#include <algorithm>
+#include <iomanip>
 
 
 #define F_ALL     0x1
 #define F_LIST    0x2
 #define F_RECURSE 0x4
 
+using namespace std;
+
 struct file_output {
-    std::string file_name;
-    std::string file_details;
+    string file_name;
+    string file_details;
 };
 
 int getFlags(int argc, char** argv);
 int getArgs(int argc, char** argv, char** files);
-int printDetails(const std::string path);
-std::string getFileType(const std::string path);
-std::string getFileType(struct stat& stat_buf);
-std::string getFilePermissions(struct stat& stat_buf);
-std::string getFileUser(struct stat& stat_buf);
-std::string getFileGroup(struct stat& stat_buf);
-std::string getFileLinks(struct stat& stat_buf);
-std::string getFileTime(struct stat& stat_buf);
-std::string getFileSize(struct stat& stat_buf);
-
+void printDir(const string, int flags);
+void printFile(const string, int longest, int flags);
+void printFile(const string,int flags);
+void printFileList(const vector<string> &file_list, const string &parent, int flags);
+int printDetails(const string path);
+bool isDir(const string path);
+void sortFiles(vector<string> &file_list);
+bool fileCompare(string i, string j);
+int longestString(const vector<string> &file_list);
+int charCount(const vector<string> &file_list);
+string getFileType(struct stat& stat_buf);
+string getFilePermissions(struct stat& stat_buf);
+string getFileUser(struct stat& stat_buf);
+string getFileGroup(struct stat& stat_buf);
+string getFileLinks(struct stat& stat_buf);
+string getFileTime(struct stat& stat_buf);
+string getFileSize(struct stat& stat_buf);
 
 
 
@@ -39,70 +51,126 @@ int main(int argc, char** argv)
 {
     argv++;
     argc--;
-    int flags = getFlags(argc, argv);
     char** files = new char*[argc];
+    int flags = getFlags(argc, argv);
+    if (flags == -1) {
+        cerr << "Undefined flag passed\n";
+        cerr << "Supported flags: -a -R -l\n";
+        exit(EXIT_FAILURE);
+    }
     int arg_length = getArgs(argc, argv, files);
-    printDetails("Makefile");
-    flags++;
-    arg_length++;
+    if (arg_length == 0) {
+        printDir(".", flags);
+    }
+    else {
+        for (int i = 0; i < arg_length; i++) {
+            if (isDir(files[i])) {
+                if (arg_length > 1) cout << files[i] << ":" << endl;
+                printDir(files[i], flags);
+                if (i < (arg_length - 1)) cout << endl;
+            }
+            else {
+                printFile(files[i], flags & F_ALL);
+                cout << endl;
+                if (i < (arg_length - 1)) cout << endl;
+            }
+        }
+    }
+
     delete[] files;
     return 0;
 }
 
-void printDir(const char* path, int flags) {
-    DIR *dirp = opendir(path);
+void printDir(const string path, int flags) {
+    vector<string> file_names;
+    vector<string> dir_list;
+    DIR *dirp = opendir(path.c_str());
     if (dirp == NULL) {
         perror("opendir");
         exit(EXIT_FAILURE);
     }
     dirent *direntp;
-    while ((direntp = readdir(dirp)))
-        std::cout << direntp->d_name << std::endl;  // use stat here to find attributes of file
+    while ((direntp = readdir(dirp))) {
+        file_names.push_back(direntp->d_name);
+        //if(isDir(path.append(direntp->d_name)) && (flag & F_RECURSE))
+    }
+    sortFiles(file_names);
+    printFileList(file_names, path, flags);
     closedir(dirp);
 }
 
+void printFileList(const vector<string> &file_list, const string &parent, int flags) {
+    int longest = longestString(file_list);
+    int term_width = 80;//assume terminal width of 80 characters
+    int line_break = term_width / longest;
+    for (int i = 0; i < (int)file_list.size(); i++) {
+        string full_path = parent;
+        if (parent[parent.length()] != '/') {
+            full_path += "/";
+        }
+        full_path += file_list[i];
+        //printDetails(full_path);
+        if (charCount(file_list) < term_width) {
+            printFile(file_list[i], flags);
+        }
+        else {
+            if (i % line_break == 0 && i != 0) cout << endl;
+            printFile(file_list[i], longest,flags);
+        }
+    }
+    cout << endl;
+}
 
-int printDetails(const std::string path) {
+void printFile(const string file_name, int longest, int flags) {
+    cout << left <<  setw(longest) << file_name << "  ";
+}
+
+void printFile(const string file_name, int flags) {
+    printFile(file_name, 0, flags);
+}
+
+
+
+int printDetails(const string path) {
     struct stat stat_buf;
     if (stat(path.c_str(), &stat_buf) == -1) {
         perror("stat");
         return -1;
     }
-    std::cout << getFileType(stat_buf);
-    std::cout << getFilePermissions(stat_buf) << " ";
-    std::cout << getFileLinks(stat_buf) << " ";
-    std::cout << getFileUser(stat_buf) << " ";
-    std::cout << getFileGroup(stat_buf) << " ";
-    std::cout << getFileSize(stat_buf) << " ";
-    std::cout << getFileTime(stat_buf) << " ";
+    cout << getFilePermissions(stat_buf) << " ";
+    cout << setw(3) << getFileLinks(stat_buf) << " ";
+    cout << setw(15) << getFileUser(stat_buf) << " ";
+    cout << setw(15) << getFileGroup(stat_buf) << " ";
+    cout << setw(5) << getFileSize(stat_buf) << " ";
+    cout << setw(10) << getFileTime(stat_buf) << " ";
     return 0;
 }
 
-std::string getFileTime(struct stat& stat_buf) {
-    std::string time(ctime(&stat_buf.st_mtime));
-    return time;
+string getFileTime(struct stat& stat_buf) {
+    string time(ctime(&stat_buf.st_mtime));
+    return time.substr(4, ( time.substr(4).length() - 9) );
 }
 
-std::string getFileSize(struct stat& stat_buf) {
-    std::string size;
-    std::ostringstream convert;
+string getFileSize(struct stat& stat_buf) {
+    string size;
+    ostringstream convert;
     convert << (long) stat_buf.st_size;
     size = convert.str();
     return size;
 }
 
-std::string getFileLinks(struct stat& stat_buf) {
-    std::string links;
-    std::ostringstream convert;
+string getFileLinks(struct stat& stat_buf) {
+    string links;
+    ostringstream convert;
     convert << (long) stat_buf.st_nlink;
     links = convert.str();
     return links;
 }
 
 
-std::string getFileGroup(struct stat& stat_buf) {
+string getFileGroup(struct stat& stat_buf) {
     struct group* grp = getgrgid(stat_buf.st_gid);
-    std::string group;
+    string group;
     if (!grp) {
         perror("getpwuid");
         group = "?";
@@ -112,9 +180,9 @@ std::string getFileGroup(struct stat& stat_buf) {
     }
     return group;
 }
-std::string getFileUser(struct stat& stat_buf) {
+string getFileUser(struct stat& stat_buf) {
     struct passwd* pwd = getpwuid(stat_buf.st_uid);
-    std::string username;
+    string username;
     if (!pwd) {
         perror("getpwduid");
         username = "?";
@@ -125,8 +193,8 @@ std::string getFileUser(struct stat& stat_buf) {
     return username;
 }
 
-std::string getFilePermissions(struct stat& sb) {
-    std::string perms("");
+string getFilePermissions(struct stat& sb) {
+    string perms("");
     if (sb.st_mode & S_IRUSR) {
         perms += "r";
     }
@@ -167,17 +235,17 @@ std::string getFilePermissions(struct stat& sb) {
     return perms;
 }
 
-std::string getFileType(struct stat& sb) {
-    std::string file_type;
+string getFileType(struct stat& sb) {
+    string file_type;
     switch (sb.st_mode & S_IFMT) {
         case S_IFBLK:
             file_type = "b";
             break;
+        case S_IFSOCK:
+            file_type = "s";
+            break;
         case S_IFCHR:
             file_type = "c";
-            break;
-        case S_IFDIR:
-            file_type = "d";
             break;
         case S_IFIFO:
             file_type = "p";
@@ -188,8 +256,8 @@ std::string getFileType(struct stat& sb) {
         case S_IFREG:
             file_type = "-";
             break;
-        case S_IFSOCK:
-            file_type = "s";
+        case S_IFDIR:
+            file_type = "d";
             break;
         default:
             file_type = "?";
@@ -199,13 +267,13 @@ std::string getFileType(struct stat& sb) {
 }
 
 
-std::string getFileType(const std::string path) {
+bool isDir(string path) {
     struct stat sb;
     if (stat(path.c_str(), &sb) == -1) {
        perror("stat");
-       return "?";
+       return false;
     }
-    return getFileType(sb);
+    return S_ISDIR(sb.st_mode);
 }
 
 // Loops through arguments and and sets flags
@@ -248,4 +316,63 @@ int getArgs(int argc, char** argv, char** files)
         }
     }
     return size;
+}
+
+void sortFiles(vector<string> &file_list) {
+    sort(file_list.begin(), file_list.end(), fileCompare);
+}
+
+
+bool fileCompare(string i, string j) {
+    string first = i;
+    string second = j;
+    if (i == ".") return true;
+    else if (j == ".") return false;
+    else if (i == "..") return true;
+    else if (j == "..") return false;
+
+    if (i[0] == '.') {
+        int ind = 1;
+        //in case there is more than one dot in front of file
+        while (i[ind] == '.') {
+            ind++;
+            if (!i[ind]) {
+                return true; //only dots so we will try to put it up front
+            }
+        }
+        first = i.substr(ind, string::npos);
+    }
+    if (j[0] == '.') {
+        int ind = 1;
+        //in case there is more than one dot in front of file
+        while (j[ind] == '.') {
+            ind++;
+            if (!j[ind]) {
+                return true; //only dots
+            }
+        }
+        second = j.substr(ind, string::npos);
+    }
+    transform(first.begin(), first.end(), first.begin(), ::toupper);
+    transform(second.begin(), second.end(), second.begin(), ::toupper);
+    return first < second;
+}
+
+int longestString(const vector<string> &file_list) {
+    int length = 0;
+    for (int i = 0; i < (int)file_list.size(); i++) {
+        if ((int)file_list[i].length() > length) {
+            length = file_list[i].length();
+        }
+    }
+    return length;
+}
+
+int charCount(const vector<string> &file_list) {
+    int count = 0;
+    for (int i = 0; i < (int)file_list.size(); i++) {
+        count += (int) file_list[i].length();
+    }
+    count += 2 * ((int)file_list.size() - 1);// add spaces (2 between each file)
+    return count;
 }
