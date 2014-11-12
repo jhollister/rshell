@@ -23,7 +23,8 @@ git clone https://github.com/jhollister/rshell.git
 cd rshell
 make
 ```
-#####To run rshell enter the following:
+
+######To run rshell enter the following:
 ```
 bin/rshell
 ```
