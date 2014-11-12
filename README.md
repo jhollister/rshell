@@ -54,6 +54,7 @@ bin/ls [FLAG]... [FILE]...
 * When bringing rshell into the foreground with `fg` after suspending it with `Ctrl-z` the prompt does not display
 * Using ctrl-z while a child process is running suspends all of rshell.
 * Character limit of 4095 characters.
+
 ######ls
 * Output format does not display correctly with a lot of small files.
 * Symbolic link support is not perfect and sometimes shows a dead link when it is not (may be fixed).
