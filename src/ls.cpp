@@ -185,7 +185,7 @@ void printFile(const string file_name, const string parent, int longest, int fla
            }
            buf[length] = 0; //append null character
            cout <<  setw(0) << "-> ";
-           if (access(buf, F_OK) == -1) {
+           if (access(string(parent + buf).c_str(), F_OK) == -1) {
                // This system call checks if the file exists
                // if it doesn't exist then I will print out the link but color
                // it red to show that it is not a valid link
@@ -193,7 +193,7 @@ void printFile(const string file_name, const string parent, int longest, int fla
                cout << "\033[0;31m" << buf << "\033[0m";
            }
            else {
-               printFile(string(buf), "", flags | F_ALL);
+               printFile(string(buf), parent, flags | F_ALL);
            }
         }
     }
