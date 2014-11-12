@@ -3,6 +3,7 @@
 ##About
 Rshell is a basic shell for UNIX based operating systems written for University of California Riverside's CS100 class. Included in rshell is an implementation of gnu ls, which is compiled and run separately.
 ####Features
+
 ######rshell
 * Can run executables located in the system's bin directories
 * Chain commands together on one line using `; && ||`
