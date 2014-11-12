@@ -99,7 +99,7 @@ void printDir(const string path, int flags) {
     DIR *dirp = opendir(path.c_str());
     if (dirp == NULL) {
         perror("printDir: opendir");
-        exit(EXIT_FAILURE);
+        return;
     }
     dirent *direntp;
     while ((direntp = readdir(dirp))) {
@@ -130,14 +130,17 @@ void printDir(const string path, int flags) {
     if (!dir_list.empty()) {
         for (int i = 0; i < (int) dir_list.size(); i++) {
             cout << endl;
-            printDir(full_path + dir_list[i], flags);
+            //don't follow sym links when doing recursive
+            if (!isLink(full_path + dir_list[i])) {
+                printDir(full_path + dir_list[i], flags);
+            }
         }
     }
 }
 
 void printFileList(const vector<string> &file_list, const string &parent, int flags) {
     int longest = longestString(file_list) + 2; //add two to account for spaces
-    int term_width = getTerminalWidth() - 2;
+    int term_width = getTerminalWidth() - longest;
     int line_break = term_width / longest;
     if (line_break == 0) line_break++;
     for (int i = 0; i < (int)file_list.size(); i++) {
@@ -190,7 +193,7 @@ void printFile(const string file_name, const string parent, int longest, int fla
                // if it doesn't exist then I will print out the link but color
                // it red to show that it is not a valid link
                // Please don't mark me down for not calling perror
-               cout << "\033[0;31m" << buf << "\033[0m";
+               cout << setw(0) << "\033[0;31m" << buf << "\033[0m";
            }
            else {
                printFile(string(buf), parent, flags | F_ALL);
@@ -243,6 +246,7 @@ void printDetails(const vector<string> &file_names, const string &parent, int fl
         string full_path = parent_slash;
         full_path += file_names[i];
         if (lstat(full_path.c_str(), &stat_buf) == -1) {
+            cerr << full_path << endl;
             perror("printDetails: stat");
             return;
         }
