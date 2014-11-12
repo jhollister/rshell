@@ -269,7 +269,7 @@ void printDetails(const vector<string> &file_names, const string &parent, int fl
         cout << setw(longestString(groups)) << groups[i] << " ";
         cout << setw(longestString(sizes)) << sizes[i] << " ";
         cout << setw(longestString(times)) << times[i] << " ";
-        printFile(file_names[i], parent_slash, flags); //clear flag so details aren't printed
+        printFile(file_names[i], parent_slash, flags);
         cout << endl;
     }
 }
