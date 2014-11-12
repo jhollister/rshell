@@ -61,6 +61,7 @@ bin/ls [FLAG]... [FILE]...
 * Output format does not display correctly with a lot of small files.
 * Output format is not as compact as the real ls.
 * Output is displayed alphabetically from left to right as opposed to real ls where it is displayed alphabetically by column.
+* Colors do not stack. So if a file is hidden and and executable it will still have black text but a gray background.
 
 ##License
 All source files released under MIT license. See LICENSE file.
