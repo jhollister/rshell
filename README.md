@@ -60,7 +60,7 @@ bin/ls [FLAG]... [FILE]...
 ######ls
 * Output format does not display correctly with a lot of small files.
 * Output format is not as compact as the real ls.
-* Output is displayed alphabetically from left to right as opposed to read ls where it is displayed alphabetically by column.
+* Output is displayed alphabetically from left to right as opposed to real ls where it is displayed alphabetically by column.
 
 ##License
 All source files released under MIT license. See LICENSE file.
