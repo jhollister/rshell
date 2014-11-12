@@ -193,7 +193,7 @@ void printFile(const string file_name, const string parent, int longest, int fla
                cout << "\033[0;31m" << buf << "\033[0m";
            }
            else {
-               printFile(string(buf), "", flags || F_ALL);
+               printFile(string(buf), "", flags | F_ALL);
            }
         }
     }
