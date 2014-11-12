@@ -57,8 +57,8 @@ bin/ls [FLAG]... [FILE]...
 
 ######ls
 * Output format does not display correctly with a lot of small files.
-* Symbolic link support is not perfect and sometimes shows a dead link when it is not (may be fixed).
 * Output format is not as compact as the real ls.
+* Output is displayed alphabetically from left to right as opposed to read ls where it is displayed alphabetically by column.
 
 ##License
 All source files released under MIT license. See LICENSE file.
