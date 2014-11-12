@@ -188,8 +188,17 @@ void printFile(const string file_name, const string parent, int longest, int fla
                return;
            }
            buf[length] = 0; //append null character
+           //since links are relative to there position they sometimes use the
+           //parent directory and sometimes start at root
+           string link_parent;
+           if (buf[0] == '/') { //starts at root
+               link_parent = "";
+           }
+           else {
+               link_parent = parent;
+           }
            cout <<  setw(0) << "-> ";
-           if (access(string(parent + buf).c_str(), F_OK) == -1) {
+           if (access(string(link_parent + buf).c_str(), F_OK) == -1) {
                // This system call checks if the file exists
                // if it doesn't exist then I will print out the link but color
                // it red to show that it is not a valid link
@@ -197,7 +206,7 @@ void printFile(const string file_name, const string parent, int longest, int fla
                cout << setw(0) << "\033[0;31m" << buf << "\033[0m";
            }
            else {
-               printFile(string(buf), parent, flags | F_ALL);
+               printFile(string(buf), link_parent, flags | F_ALL);
            }
         }
     }
