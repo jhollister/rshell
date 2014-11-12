@@ -46,6 +46,7 @@ bin/ls [FLAG]... [FILE]...
 
 
 ##Bugs and Limitations
+######rshell
 * Quotation marks are not completely supported and this can break some commands such as `git commit -m "This is a commit"`. All of the space delimited tokens: `"This` `is` `a` `commit"` will be passed as arguments to git when git only expects one token: `"This is a commit"`
 * When there is a syntax error in the command such as improper use of connectors the commands before the syntax error will still be exectuted. This can make it hard to debug complex commands with a mistake because it's hard to find out what executed and where the mistake was. A better way would be to do what bash does and not execute anything if there is a syntax error.
 * Typing `Ctrl-C` after starting a program inside rshell does not close that program as expected, instead it closes Rshell. This  causes a memory leak as well since deallocation is done in the parent process and isn't able to take place.
@@ -53,7 +54,9 @@ bin/ls [FLAG]... [FILE]...
 * When bringing rshell into the foreground with `fg` after suspending it with `Ctrl-z` the prompt does not display
 * Using ctrl-z while a child process is running suspends all of rshell.
 * Character limit of 4095 characters.
-
+######ls
+* Output format does not display correctly with a lot of small files.
+* Symbolic link support is not perfect and sometimes shows a dead link when it is not (may be fixed).
 
 ##License
 All source files released under MIT license. See LICENSE file.
