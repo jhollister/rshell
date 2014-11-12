@@ -131,6 +131,7 @@ void printDir(const string path, int flags) {
         for (int i = 0; i < (int) dir_list.size(); i++) {
             cout << endl;
             //don't follow sym links when doing recursive
+            //can cause infinite loop and other bugs
             if (!isLink(full_path + dir_list[i])) {
                 printDir(full_path + dir_list[i], flags);
             }
