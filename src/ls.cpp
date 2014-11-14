@@ -139,7 +139,8 @@ void printDir(const string path, int flags) {
     }
 }
 
-void printFileList(const vector<string> &file_list, const string &parent, int flags) {
+void printFileList(const vector<string> &file_list,
+                   const string &parent, int flags) {
     int longest = longestString(file_list) + 2; //add two to account for spaces
     int term_width = getTerminalWidth() - longest;
     int line_break = term_width / longest;
@@ -156,7 +157,8 @@ void printFileList(const vector<string> &file_list, const string &parent, int fl
     cout << endl;
 }
 
-void printFile(const string file_name, const string parent, int longest, int flags) {
+void printFile(const string file_name, const string parent,
+               int longest, int flags) {
     bool print = true;
     if (!(F_ALL & flags) && file_name[0] == '.') print = false;
 
@@ -182,7 +184,7 @@ void printFile(const string file_name, const string parent, int longest, int fla
         cout << left << setw(longest) << file_name << "\033[0m  ";
         if ((flags & F_LIST) && isLink(parent + file_name)) {
            char buf[BUFSIZ];
-           int length = readlink(string(parent + file_name).c_str(), buf, BUFSIZ);
+           int length = readlink(string(parent+file_name).c_str(),buf, BUFSIZ);
            if (length == -1) {
                perror("readlink");
                return;
@@ -232,7 +234,8 @@ void printDetails(const string path, int flags) {
     cout << getFileTime(stat_buf) << " ";
 }
 
-void printDetails(const vector<string> &file_names, const string &parent, int flags) {
+void printDetails(const vector<string> &file_names,
+                  const string &parent, int flags) {
     string parent_slash = parent;
     if (parent_slash[parent.length() - 1] != '/')
         parent_slash += "/";
