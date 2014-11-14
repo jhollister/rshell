@@ -224,14 +224,10 @@ std::string nextToken(const std::string &command, int &current_ind)
 
 /*
  * Returns the prompt as a string.
- * Will always be in the format: username@hostname$
- * If it can't find hostname prints an error and will not add hostname to prompt
  * If there is an error getting username no username will be displayed
  * If it can't find hostname prints an error and does not display a hostname
  * If the hostname is greater than 20 characters it will be truncated
  * If it has trouble with username it will default to an empty username
- * TODO: Make it so that the command prompt can be easily customizable
- *       (like bashs's PS1=)
  */
 std::string getPrompt()
 {
