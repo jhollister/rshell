@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-Wall -Werror -ansi -pedantic -g
+CFLAGS=-Wall -Werror -ansi -pedantic -std=c++11 -g
 RSHELL_SOURCES=src/rshell.cpp
 LS_SOURCES=src/ls.cpp
 CP_SOURCES=src/cp.cpp

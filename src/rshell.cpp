@@ -13,7 +13,8 @@ const std::string AND_CONNECTOR = "&&";
 const std::string OR_CONNECTOR =  "||";
 const std::string CONNECTOR = ";";
 const std::string COMMENT = "#";
-const std::vector<std::string> DELIMS = {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR};
+const std::vector<std::string> DELIMS =
+                   {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR};
 
 struct Command {
     std::string prevConnector;
@@ -22,6 +23,7 @@ struct Command {
 };
 
 int fillCommands(const std::string &input, std::vector<Command> &commands);
+int nextDelim(const std::string &input);
 int execCommandList(const std::vector<Command> &commands);
 int execCommand(const Command &command);
 int strip(std::string &);
@@ -34,17 +36,18 @@ int main()
     while(status == 0) {
         std::cout << prompt;
         std::string input;
-        std::vector<Command> commands;
+        //std::vector<Command> commands;
         std::getline(std::cin, input);
-        int length = fillCommands(input, commands);
-        if (length == -1) {
-            status = 1;
-            std::cout << "rshell: Syntax error near unexpected token: "
-                      << commands.back().prevConnector << std::endl;
-        }
-        else {
-            status = execCommandList(commands);
-        }
+        std::cout << nextDelim(input) << std::endl;
+        //int length = fillCommands(input, commands);
+        //if (length == -1) {
+            //status = 1;
+            //std::cout << "rshell: Syntax error near unexpected token: "
+                      //<< commands.back().prevConnector << std::endl;
+        //}
+        //else {
+            //status = execCommandList(commands);
+        //}
     }
 
     //return 1 if there was an error
@@ -221,34 +224,34 @@ int strip(std::string &str)
 }
 
 /*
- * Returns the current token in the command string and updates the reference
- * variable current_ind to be the index of the start of the next command.
- * Uses global constant DELIMS to determine what separates each command.
+ * Fills the list of Commands given the input
+ * Separates each command based on whether there is a given delimiter
+ * in input that matches a delimiter in DELIMS
+ * Returns the length of commands
+ * Returns -1 if there is an error in parsing
  */
-int fillCommands(const std::string &input, std::vector<Command> &commands);
+int fillCommands(const std::string &input, std::vector<Command> &commands)
 {
-    int delim_pos = 0;
-    char *current_delim = new char[3];
-    int start = current_ind;
-    int length = 0;
-    while (command[current_ind] != 0) {
-        while (DELIMS[delim_pos] != NULL) {
-            strcpy(current_delim, DELIMS[delim_pos]);
-            if (strcmp(command.substr(current_ind,
-                                      strlen(current_delim)).c_str(),
-                       current_delim) == 0) {
-                delete[] current_delim;
-                return command.substr(start, length);
-            }
-            delim_pos++;
-        }
-        length++;
-        current_ind++;
-        delim_pos = 0;
-    }
-    delete[] current_delim;
-    return command.substr(start, length); // no connectors
+    return 0;
 }
+
+/*
+ * Returns the index of the next delim in input
+ * If there is no delim in input returns -1
+ */
+int nextDelim(const std::string &input) {
+    int ind = 0;
+    while(input[ind] != 0) {
+        for (unsigned int i = 0; i < DELIMS.size(); i++) {
+            if (input.substr(ind, DELIMS[i].length()) == DELIMS[i]) {
+                return ind;
+            }
+        }
+        ind++;
+    }
+    return -1;
+}
+
 
 /*
  * Returns the prompt as a string.
