@@ -24,9 +24,11 @@ struct Command {
 
 int fillCommands(const std::string &input, std::vector<Command> &commands);
 int nextDelim(const std::string &input);
+std::string getDelimAt(const std::string &input, int index);
 int execCommandList(const std::vector<Command> &commands);
 int execCommand(const Command &command);
 int strip(std::string &);
+void stripLeadingSpaces(std::string &str);
 std::string getPrompt();
 
 int main()
@@ -36,18 +38,21 @@ int main()
     while(status == 0) {
         std::cout << prompt;
         std::string input;
-        //std::vector<Command> commands;
+        std::vector<Command> commands;
         std::getline(std::cin, input);
-        std::cout << nextDelim(input) << std::endl;
-        //int length = fillCommands(input, commands);
-        //if (length == -1) {
-            //status = 1;
-            //std::cout << "rshell: Syntax error near unexpected token: "
-                      //<< commands.back().prevConnector << std::endl;
-        //}
-        //else {
+        int length = fillCommands(input, commands);
+        if (length == -1) {
+            std::cout << "rshell: Syntax error near unexpected token: "
+                      << commands.back().nextConnector << std::endl;
+        }
+        else {
             //status = execCommandList(commands);
-        //}
+            for (unsigned int i = 0; i < commands.size(); i++) {
+                std::cerr << "\"" << commands[i].prevConnector << "\""
+                    << "\t" << commands[i].command
+                    << "\t\"" << commands[i].nextConnector << "\"\n";
+            }
+        }
     }
 
     //return 1 if there was an error
@@ -211,12 +216,12 @@ int strip(std::string &str)
     char *temp = new char[str.length()+1];
     strcpy(temp, str.c_str());
     str="";
-    char *tok = strtok(temp, " ");
+    char *tok = strtok(temp, " \n\t\v\f\r");
     int count = 0;
     while(tok != NULL) {
         str += tok;
-        str += " ";
-        tok = strtok(NULL, " ");
+        tok = strtok(NULL, " \n\t\v\f\r");
+        if (tok != NULL) str += " ";
         count++;
     }
     delete[] temp;
@@ -224,20 +229,50 @@ int strip(std::string &str)
 }
 
 /*
+ * Strips all leading spaces from str
+ */
+void stripLeadingSpaces(std::string &str) {
+    while (str[0] == ' ') {
+       str = str.substr(1);
+    }
+}
+/*
  * Fills the list of Commands given the input
  * Separates each command based on whether there is a given delimiter
  * in input that matches a delimiter in DELIMS
- * Returns the length of commands
+ * Returns the amount of commands
  * Returns -1 if there is an error in parsing
  */
 int fillCommands(const std::string &input, std::vector<Command> &commands)
 {
-    return 0;
+    int start = 0;
+    int size = 0;
+    std::string command_str = input;
+    std::string prev_connector = "";
+    std::string next_connector = "";
+    strip(command_str);
+    Command current_command;
+    while(command_str.substr(start) != "") {
+        int next = nextDelim(command_str.substr(start));
+        std::string current_delim = getDelimAt(command_str.substr(start), next);
+        current_command.prevConnector = next_connector;
+        current_command.nextConnector = current_delim;
+        next_connector = current_delim;
+        current_command.command = command_str.substr(start, next);
+        commands.push_back(current_command);
+        size++;
+        start += next + current_delim.length();
+        if (next == 0) {
+            return -1;
+        }
+    }
+
+    return size;
 }
 
 /*
  * Returns the index of the next delim in input
- * If there is no delim in input returns -1
+ * If there is no delim in input returns the length of input
  */
 int nextDelim(const std::string &input) {
     int ind = 0;
@@ -249,7 +284,23 @@ int nextDelim(const std::string &input) {
         }
         ind++;
     }
-    return -1;
+    return ind;
+}
+
+/*
+ * Returns the value of the delimiter located at the given index.
+ * Returns an empty string if there is no delimiter there.
+ */
+std::string getDelimAt(const std::string &input, int index) {
+    std::string delim = "";
+    for (unsigned int i = 0; i < DELIMS.size(); i++) {
+        if (input.substr(index, DELIMS[i].length()) == DELIMS[i]) {
+            delim = DELIMS[i];
+            return delim;
+        }
+    }
+    return delim;
+
 }
 
 
