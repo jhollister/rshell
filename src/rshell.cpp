@@ -26,7 +26,7 @@ int fillCommands(const std::string &input, std::vector<Command> &commands);
 int nextDelim(const std::string &input);
 std::string getDelimAt(const std::string &input, int index);
 int execCommandList(const std::vector<Command> &commands);
-int execCommand(const Command &command);
+int execCommand(const  std::string command);
 int strip(std::string &);
 void stripLeadingSpaces(std::string &str);
 std::string getPrompt();
@@ -45,12 +45,12 @@ int main()
             std::cout << "rshell: Syntax error near unexpected token: "
                       << commands.back().nextConnector << std::endl;
         }
-        else {
+        else if (!commands.empty()){
             //status = execCommandList(commands);
             for (unsigned int i = 0; i < commands.size(); i++) {
                 std::cerr << "\"" << commands[i].prevConnector << "\""
-                    << "\t" << commands[i].command
-                    << "\t\"" << commands[i].nextConnector << "\"\n";
+                          << commands[i].command
+                          << "\"" << commands[i].nextConnector << "\"\n";
             }
         }
     }
@@ -60,85 +60,46 @@ int main()
 }
 
 
-/* Executes the list of commands in command_list separated by connectors
- * Uses the DELIMS global constants to determine which connector was used.
- * Returns: -1: And error occured and we couldn't finish the commands
- *           0: Successfully executed commands
- *           1: Exit was called
- * TODO: Rewrite this function so it's easier to follow
- * TODO: Add a status return so main() can know if something went wrong.
+/*
+ * Executes the list of commands in commands
+ * Returns:  1: An error occured and we couldn't finish the commands
+ *           0: Successfully executed all commands
+ *          -1: Exit was called
  */
-//int execCommandList(const std::string &command_list)
-//{
-    //int count = 0; // keeps track of the number of commands run
-    //int current_ind = 0;// keeps track of the current character
-    //bool execute = true;
-    //int cmd_status = 0; // keeps track of the status of the last command run
-    //std::string current_command = nextToken(command_list, current_ind);
-    //strip(current_command);
-    //while (execute) {
-        //cmd_status = execCommand(current_command);
-        //if (cmd_status == -1) {
-            //return 1; //exit was called in execcommand
-        //}
-        //else if((command_list.substr(current_ind, strlen(COMMENT)) == COMMENT)
-                //|| command_list[current_ind] == 0) {
-            //// '#' comment character was used or we have executed last command
-            //execute = false;
-        //}
-        //else if (current_command == "") {
-            //// command was empty so there was a syntax error
-            //// Most likely two connectors together such as ';;' or '&& &&'
-            //std::cerr << "rshell: syntax error near unexpected token: " <<
-                         //command_list[current_ind] << std::endl;
-            //execute = false;
-        //}
-        //else if (command_list.substr(current_ind, strlen(CONNECTOR)) ==
-                //CONNECTOR) {
-            //// ';' connector was used
-            //current_ind += strlen(CONNECTOR);
-            //current_command = nextToken(command_list, current_ind);
-            //execute = true;
-        //}
-        //else if(command_list.substr(current_ind, strlen(AND_CONNECTOR)) ==
-                //AND_CONNECTOR) {
-            //// "&&" connector was used
-            //current_ind += strlen(AND_CONNECTOR);
-            //if (cmd_status == 0) {
-                //current_command = nextToken(command_list, current_ind);
-                //execute = true;
-            //}
-            //else {
-                //execute = false;
-            //}
-        //}
-        //else if(command_list.substr(current_ind, strlen(OR_CONNECTOR)) ==
-                //OR_CONNECTOR) {
-            //// "||" connector was used
-            //current_ind += strlen(OR_CONNECTOR);
-            //if (cmd_status != 0) {
-                //current_command = nextToken(command_list, current_ind);
-                //execute = true;
-            //}
-            //else {
-                //execute = false;
-            //}
-        //}
-        //else {
-            //std::cerr << "rshell: Something went wrong at: " <<
-                         //command_list[current_ind] << std::endl;
-            //execute = false;
-        //}
-        //count++;
-        //strip(current_command);
-    //}
-    //return 0;
-//}
-
-
 int execCommandList(const std::vector<Command> &commands)
 {
-    return 0;
+    bool execute = true;
+    int cmd_status = 0; // keeps track of the status of the last command run
+    int status = 0;
+    while (execute) {
+        for (unsigned int i = 0; i < commands.size(); i++) {
+            cmd_status = execCommand(commands[i].command);
+            if (cmd_status == -1) {
+                // exit was called in execCommand
+                status = -1;
+                execute = false;
+            }
+            else if(commands[i].prevConnector == COMMENT ||
+                    commands[i].nextConnector == "") {
+                execute = false;
+            }
+            else if(commands[i].prevConnector == CONNECTOR) {
+                execute = true;
+            }
+            else if(commands[i].prevConnector == AND_CONNECTOR) {
+                execute = !(cmd_status);
+            }
+            else if(commands[i].prevConnector == OR_CONNECTOR) {
+                execute = cmd_status;
+            }
+            else {
+                //don't know why this would happen
+                status = 1;
+                execute = false;
+            }
+        }
+    }
+    return status;
 }
 
 /*
@@ -149,56 +110,56 @@ int execCommandList(const std::vector<Command> &commands)
  *          > 0 - an error occurred
  *          -1  - exit was called
  */
-//int execCommand(std::string &command)
-//{
-    //int status = 1; //return status of function - 0 success Nonzero failure
-    //int token_count = strip(command);
-    //if (command == "") { // if the command is empty just return
-        //return status;
-    //}
-    //char *c_command = new char[command.length()+1];
-    //strcpy(c_command, command.c_str());
-    //char *tok = strtok(c_command, " ");
+int execCommand(std::string command)
+{
+    int status = 1; //return status of function - 0 success Nonzero failure
+    int token_count = strip(command);
+    if (command == "") { // if the command is empty just return
+        return status;
+    }
+    char *c_command = new char[command.length()+1];
+    strcpy(c_command, command.c_str());
+    char *tok = strtok(c_command, " ");
 
-    //char **args = new char*[token_count+1];
-    //for (int i = 0; i < token_count; i++) {
-        //args[i] = tok;
-        //tok = strtok(NULL, " ");
-    //}
-    //args[token_count] = 0; // null terminate the array
+    char **args = new char*[token_count+1];
+    for (int i = 0; i < token_count; i++) {
+        args[i] = tok;
+        tok = strtok(NULL, " ");
+    }
+    args[token_count] = 0; // null terminate the array
 
-    //if (strcmp(args[0], "exit") == 0) { // check to see if exit was entered
-        //std::cout << "exiting rshell...\n";
-        //status = -1;
-    //}
+    if (strcmp(args[0], "exit") == 0) { // check to see if exit was entered
+        std::cout << "exiting rshell...\n";
+        status = -1;
+    }
 
-    //else {
-        //// time for the fun stuff now.
-        //int pid = fork();
-        //if (pid == -1) {  // error in fork
-            //perror("fork: ");
-            //exit(EXIT_FAILURE);
-        //}
-        //else if (pid == 0) { // in child process
-            //if (execvp(args[0], args) == -1) {
-                //perror("execvp: ");
-                //_exit(EXIT_FAILURE);
-            //}
-        //}
-        //else {  // in parent
-            //if (wait(&status) == -1) {
-                //perror("wait: ");
-            //}
-            //if (WIFEXITED(status)) {
-                //status = WEXITSTATUS(status);
-            //}
-        //}
-    //}
+    else {
+        // time for the fun stuff now.
+        int pid = fork();
+        if (pid == -1) {  // error in fork
+            perror("fork: ");
+            exit(EXIT_FAILURE);
+        }
+        else if (pid == 0) { // in child process
+            if (execvp(args[0], args) == -1) {
+                perror("execvp: ");
+                _exit(EXIT_FAILURE);
+            }
+        }
+        else {  // in parent
+            if (wait(&status) == -1) {
+                perror("wait: ");
+            }
+            if (WIFEXITED(status)) {
+                status = WEXITSTATUS(status);
+            }
+        }
+    }
 
-    //delete[] args;
-    //delete[] c_command;
-    //return status;
-//}
+    delete[] args;
+    delete[] c_command;
+    return status;
+}
 
 int execCommand(const Command &command)
 {
@@ -231,7 +192,8 @@ int strip(std::string &str)
 /*
  * Strips all leading spaces from str
  */
-void stripLeadingSpaces(std::string &str) {
+void stripLeadingSpaces(std::string &str)
+{
     while (str[0] == ' ') {
        str = str.substr(1);
     }
@@ -255,6 +217,15 @@ int fillCommands(const std::string &input, std::vector<Command> &commands)
     while(command_str.substr(start) != "") {
         int next = nextDelim(command_str.substr(start));
         std::string current_delim = getDelimAt(command_str.substr(start), next);
+        if (next_connector == COMMENT || (current_delim == COMMENT && next == 0)) {
+            // comments are treated differently than all other connectors
+            // since they do not cause syntax errors
+            current_command.prevConnector = COMMENT;
+            current_command.nextConnector = "";
+            current_command.command = "";
+            commands.push_back(current_command);
+            return size;
+        }
         current_command.prevConnector = next_connector;
         current_command.nextConnector = current_delim;
         next_connector = current_delim;
@@ -266,6 +237,10 @@ int fillCommands(const std::string &input, std::vector<Command> &commands)
             return -1;
         }
     }
+    if (!commands.empty() && commands.back().nextConnector != "") {
+        // If the last connector is not an empty string something went wrong
+        return -1;
+    }
 
     return size;
 }
@@ -274,7 +249,8 @@ int fillCommands(const std::string &input, std::vector<Command> &commands)
  * Returns the index of the next delim in input
  * If there is no delim in input returns the length of input
  */
-int nextDelim(const std::string &input) {
+int nextDelim(const std::string &input)
+{
     int ind = 0;
     while(input[ind] != 0) {
         for (unsigned int i = 0; i < DELIMS.size(); i++) {
@@ -291,7 +267,8 @@ int nextDelim(const std::string &input) {
  * Returns the value of the delimiter located at the given index.
  * Returns an empty string if there is no delimiter there.
  */
-std::string getDelimAt(const std::string &input, int index) {
+std::string getDelimAt(const std::string &input, int index)
+{
     std::string delim = "";
     for (unsigned int i = 0; i < DELIMS.size(); i++) {
         if (input.substr(index, DELIMS[i].length()) == DELIMS[i]) {
@@ -300,7 +277,6 @@ std::string getDelimAt(const std::string &input, int index) {
         }
     }
     return delim;
-
 }
 
 
