@@ -46,17 +46,16 @@ int main()
                       << commands.back().nextConnector << std::endl;
         }
         else if (!commands.empty()){
-            //status = execCommandList(commands);
-            for (unsigned int i = 0; i < commands.size(); i++) {
-                std::cerr << "\"" << commands[i].prevConnector << "\""
-                          << commands[i].command
-                          << "\"" << commands[i].nextConnector << "\"\n";
-            }
+            status = execCommandList(commands);
         }
     }
 
     //return 1 if there was an error
-    return status;
+    if (status == 1) {
+        std::cerr << "rshell: ERROR: Something went wrong\n";
+        return 1;
+    }
+    return 0;
 }
 
 
@@ -71,33 +70,33 @@ int execCommandList(const std::vector<Command> &commands)
     bool execute = true;
     int cmd_status = 0; // keeps track of the status of the last command run
     int status = 0;
-    while (execute) {
-        for (unsigned int i = 0; i < commands.size(); i++) {
-            cmd_status = execCommand(commands[i].command);
-            if (cmd_status == -1) {
-                // exit was called in execCommand
-                status = -1;
-                execute = false;
-            }
-            else if(commands[i].prevConnector == COMMENT ||
-                    commands[i].nextConnector == "") {
-                execute = false;
-            }
-            else if(commands[i].prevConnector == CONNECTOR) {
-                execute = true;
-            }
-            else if(commands[i].prevConnector == AND_CONNECTOR) {
-                execute = !(cmd_status);
-            }
-            else if(commands[i].prevConnector == OR_CONNECTOR) {
-                execute = cmd_status;
-            }
-            else {
-                //don't know why this would happen
-                status = 1;
-                execute = false;
-            }
+    unsigned int i = 0;
+    while (execute && (i < commands.size())) {
+        cmd_status = execCommand(commands[i].command);
+        if (cmd_status == -1) {
+            // exit was called in execCommand
+            status = -1;
+            execute = false;
         }
+        else if(commands[i].nextConnector == COMMENT ||
+                commands[i].nextConnector == "") {
+            execute = false;
+        }
+        else if(commands[i].nextConnector == CONNECTOR) {
+            execute = true;
+        }
+        else if(commands[i].nextConnector == AND_CONNECTOR) {
+            execute = !(cmd_status);
+        }
+        else if(commands[i].nextConnector == OR_CONNECTOR) {
+            execute = cmd_status;
+        }
+        else {
+            //don't know why this would happen
+            status = 1;
+            execute = false;
+        }
+        i++;
     }
     return status;
 }
@@ -189,15 +188,6 @@ int strip(std::string &str)
     return count;
 }
 
-/*
- * Strips all leading spaces from str
- */
-void stripLeadingSpaces(std::string &str)
-{
-    while (str[0] == ' ') {
-       str = str.substr(1);
-    }
-}
 /*
  * Fills the list of Commands given the input
  * Separates each command based on whether there is a given delimiter
