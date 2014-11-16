@@ -160,11 +160,6 @@ int execCommand(std::string command)
     return status;
 }
 
-int execCommand(const Command &command)
-{
-    return 0;
-}
-
 /*
  * Strips the extra whitespace from a string and returns the number of tokens
  * in the string.
@@ -189,6 +184,16 @@ int strip(std::string &str)
 }
 
 /*
+ * Strips all leading spaces from str
+ */
+void stripLeadingSpaces(std::string &str)
+{
+    while (str[0] == ' ') {
+       str = str.substr(1);
+    }
+}
+
+/*
  * Fills the list of Commands given the input
  * Separates each command based on whether there is a given delimiter
  * in input that matches a delimiter in DELIMS
@@ -204,9 +209,10 @@ int fillCommands(const std::string &input, std::vector<Command> &commands)
     std::string next_connector = "";
     strip(command_str);
     Command current_command;
-    while(command_str.substr(start) != "") {
-        int next = nextDelim(command_str.substr(start));
-        std::string current_delim = getDelimAt(command_str.substr(start), next);
+    while(command_str != "") {
+        
+        int next = nextDelim(command_str);
+        std::string current_delim = getDelimAt(command_str, next);
         if (next_connector == COMMENT || (current_delim == COMMENT && next == 0)) {
             // comments are treated differently than all other connectors
             // since they do not cause syntax errors
@@ -219,10 +225,11 @@ int fillCommands(const std::string &input, std::vector<Command> &commands)
         current_command.prevConnector = next_connector;
         current_command.nextConnector = current_delim;
         next_connector = current_delim;
-        current_command.command = command_str.substr(start, next);
+        current_command.command = command_str.substr(0, next);
         commands.push_back(current_command);
         size++;
-        start += next + current_delim.length();
+        start = next + current_delim.length();
+        command_str = command_str.substr(start);
         if (next == 0) {
             return -1;
         }
