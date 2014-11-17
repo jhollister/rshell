@@ -89,7 +89,9 @@ int execCommandList(const std::vector<Command> &commands)
         else if (pid == 0) { //in child process
             int j = i;
             while (isRedir(commands[j].nextConnector)) {
-                setRedir(commands[j].nextConnector, commands[j+1].command);
+                if (setRedir(commands[j].nextConnector, commands[j+1].command) == -1) {
+                    exit(EXIT_FAILURE);
+                }
                 j++;
             }
             execCommand(commands[i].command);
@@ -104,10 +106,10 @@ int execCommandList(const std::vector<Command> &commands)
             }
         }
         if (cmd_status == -1) status = cmd_status;
-        execute = checkStatus(cmd_status, commands[i].nextConnector);
         while (isRedir(commands[i].nextConnector)) {
             i++;
         }
+        execute = checkStatus(cmd_status, commands[i].nextConnector);
         i++;
     }
     return status;
