@@ -220,6 +220,7 @@ int fillCommands(const std::string &input, std::vector<Command> &commands)
     Command current_command;
     while(command_str != "") {
         int start = 0;
+        stripLeadingSpaces(command_str);
         int next = nextDelim(command_str);
         std::string current_delim = getDelimAt(command_str, next);
         if (next_connector == COMMENT || (current_delim == COMMENT && next == 0)) {
