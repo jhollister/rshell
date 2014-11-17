@@ -8,13 +8,16 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 const std::string AND_CONNECTOR = "&&";
 const std::string OR_CONNECTOR =  "||";
 const std::string CONNECTOR = ";";
 const std::string COMMENT = "#";
+const std::string REDIR_OUT = ">";
 const std::vector<std::string> DELIMS =
-                   {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR};
+                   {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR, REDIR_OUT};
 
 struct Command {
     std::string prevConnector;
@@ -26,10 +29,11 @@ int fillCommands(const std::string &input, std::vector<Command> &commands);
 int nextDelim(const std::string &input);
 std::string getDelimAt(const std::string &input, int index);
 int execCommandList(const std::vector<Command> &commands);
-int execCommand(const  std::string command);
+int execCommand(std::string command);
 int strip(std::string &);
 void stripLeadingSpaces(std::string &str);
 std::string getPrompt();
+bool checkStatus(const int status, const std::string &connector);
 
 int main()
 {
@@ -68,37 +72,44 @@ int main()
 int execCommandList(const std::vector<Command> &commands)
 {
     bool execute = true;
-    int cmd_status = 0; // keeps track of the status of the last command run
     int status = 0;
     unsigned int i = 0;
     while (execute && (i < commands.size())) {
-        cmd_status = execCommand(commands[i].command);
-        if (cmd_status == -1) {
-            // exit was called in execCommand
-            status = -1;
-            execute = false;
-        }
-        else if(commands[i].nextConnector == COMMENT ||
-                commands[i].nextConnector == "") {
-            execute = false;
-        }
-        else if(commands[i].nextConnector == CONNECTOR) {
-            execute = true;
-        }
-        else if(commands[i].nextConnector == AND_CONNECTOR) {
-            execute = !(cmd_status);
-        }
-        else if(commands[i].nextConnector == OR_CONNECTOR) {
-            execute = cmd_status;
-        }
-        else {
-            //don't know why this would happen
-            status = 1;
-            execute = false;
-        }
+        //if (commands[i].nextConnector == REDIR_OUT) {
+           //int fd = open(commands[i + 1].command.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0666);
+           //dup2(fd, 1);
+           //std::cout << "TESTTESTTESTE" << std::endl;
+        //}
+        int cmd_status = execCommand(commands[i].command);
+        if (cmd_status == -1) status = cmd_status;
+        execute = checkStatus(cmd_status, commands[i].nextConnector);
         i++;
     }
     return status;
+}
+
+bool checkStatus(const int status, const std::string &connector) {
+    bool execute = true;
+    if (status == -1) {
+        // exit was called in execCommand
+        execute = false;
+    }
+    else if(connector == COMMENT || connector == "") {
+        execute = false;
+    }
+    else if(connector == CONNECTOR) {
+        execute = true;
+    }
+    else if(connector == AND_CONNECTOR) {
+        execute = !(status);
+    }
+    else if(connector == OR_CONNECTOR) {
+        execute = status;
+    }
+    else {
+        execute = true;
+    }
+    return execute;
 }
 
 /*
@@ -202,15 +213,13 @@ void stripLeadingSpaces(std::string &str)
  */
 int fillCommands(const std::string &input, std::vector<Command> &commands)
 {
-    int start = 0;
     int size = 0;
     std::string command_str = input;
-    std::string prev_connector = "";
     std::string next_connector = "";
     strip(command_str);
     Command current_command;
     while(command_str != "") {
-        
+        int start = 0;
         int next = nextDelim(command_str);
         std::string current_delim = getDelimAt(command_str, next);
         if (next_connector == COMMENT || (current_delim == COMMENT && next == 0)) {
