@@ -34,6 +34,7 @@ std::string getDelimAt(const std::string &input, int index);
 int execCommandList(const std::vector<Command> &commands);
 int setRedir(const std::string &connector, const std::string &next);
 bool isRedir(const std::string &connector);
+bool exitCalled(const std::string &command);
 void execCommand(std::string command);
 int strip(std::string &);
 void stripLeadingSpaces(std::string &str);
@@ -82,6 +83,9 @@ int execCommandList(const std::vector<Command> &commands)
     while (execute && (i < commands.size())) {
         int pid = fork();
         int cmd_status = 0;
+        if (exitCalled(commands[i].command)) {
+            return -1;
+        }
         if (pid == -1) {
             perror("execCommandList: fork:");
             exit(EXIT_FAILURE);
@@ -89,7 +93,8 @@ int execCommandList(const std::vector<Command> &commands)
         else if (pid == 0) { //in child process
             int j = i;
             while (isRedir(commands[j].nextConnector)) {
-                if (setRedir(commands[j].nextConnector, commands[j+1].command) == -1) {
+                if (setRedir(commands[j].nextConnector,
+                             commands[j+1].command) == -1) {
                     exit(EXIT_FAILURE);
                 }
                 j++;
@@ -162,6 +167,13 @@ int setRedir(const std::string &connector, const std::string &next) {
     return 0;
 }
 
+bool exitCalled(const std::string &command) {
+    std::string cmd = command;
+    stripLeadingSpaces(cmd);
+    return (cmd.substr(0, std::string("exit").length()) == "exit");
+}
+
+
 bool checkStatus(const int status, const std::string &connector) {
     bool execute = true;
     if (status == -1) {
@@ -212,6 +224,8 @@ void execCommand(std::string command)
         perror("execvp:");
         _exit(EXIT_FAILURE);
     }
+    //not sure what I should do here...
+    //only deleting because cppcheck was yelling at me
     delete[] args;
     delete[] c_command;
 }
