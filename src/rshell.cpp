@@ -12,12 +12,15 @@
 #include <fcntl.h>
 
 const std::string AND_CONNECTOR = "&&";
-const std::string OR_CONNECTOR =  "||";
-const std::string CONNECTOR = ";";
-const std::string COMMENT = "#";
-const std::string REDIR_OUT = ">";
+const std::string OR_CONNECTOR  =  "||";
+const std::string CONNECTOR     = ";";
+const std::string COMMENT       = "#";
+const std::string REDIR_OUT     = ">";
+const std::string REDIR_OUT_APP = ">>";
+const std::string REDIR_IN      = "<";
 const std::vector<std::string> DELIMS =
-                   {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR, REDIR_OUT};
+                   {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR,
+                    REDIR_OUT_APP, REDIR_OUT, REDIR_IN};
 
 struct Command {
     std::string prevConnector;
@@ -29,7 +32,9 @@ int fillCommands(const std::string &input, std::vector<Command> &commands);
 int nextDelim(const std::string &input);
 std::string getDelimAt(const std::string &input, int index);
 int execCommandList(const std::vector<Command> &commands);
-int execCommand(std::string command);
+int setRedir(const std::string &connector, const std::string &next);
+bool isRedir(const std::string &connector);
+void execCommand(std::string command);
 int strip(std::string &);
 void stripLeadingSpaces(std::string &str);
 std::string getPrompt();
@@ -75,17 +80,81 @@ int execCommandList(const std::vector<Command> &commands)
     int status = 0;
     unsigned int i = 0;
     while (execute && (i < commands.size())) {
-        //if (commands[i].nextConnector == REDIR_OUT) {
-           //int fd = open(commands[i + 1].command.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0666);
-           //dup2(fd, 1);
-           //std::cout << "TESTTESTTESTE" << std::endl;
-        //}
-        int cmd_status = execCommand(commands[i].command);
+        int pid = fork();
+        int cmd_status = 0;
+        bool redir = isRedir(commands[i].nextConnector);
+        if (pid == -1) {
+            perror("execCommandList: fork:");
+            exit(EXIT_FAILURE);
+        }
+        else if (pid == 0) { //in child process
+            if (commands[i].nextConnector != "") {
+                setRedir(commands[i].nextConnector, commands[i+1].command);
+            }
+            execCommand(commands[i].command);
+        }
+
+        else {
+            if (wait(&cmd_status) == -1) {
+                perror("wait: ");
+            }
+            if (WIFEXITED(cmd_status)) {
+                cmd_status = WEXITSTATUS(cmd_status);
+            }
+        }
         if (cmd_status == -1) status = cmd_status;
         execute = checkStatus(cmd_status, commands[i].nextConnector);
+        if (redir) i++;
         i++;
     }
     return status;
+}
+
+bool isRedir(const std::string &connector) {
+    return (connector == REDIR_IN || connector == REDIR_OUT ||
+            connector == REDIR_OUT_APP);
+}
+
+int setRedir(const std::string &connector, const std::string &next) {
+    std::string file = next;
+    strip(file);
+    if (connector == REDIR_OUT) {
+        int fd = open(file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+        if (fd == -1) {
+            perror("setRedir: open");
+            return -1;
+        }
+        if (dup2(fd, 1) == -1) {
+            perror("setRedir: dup2");
+            return -1;
+        }
+    }
+    else if (connector == REDIR_IN) {
+        int fd = open(file.c_str(), O_RDONLY);
+        if (fd == -1) {
+            perror("setRedir: open");
+            return -1;
+        }
+        if (dup2(fd, 0) == -1) {
+            perror("setRedir: dup2");
+            return -1;
+        }
+    }
+    else if (connector == REDIR_OUT_APP) {
+        int fd = open(file.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0666);
+        if (fd == -1) {
+            perror("setRedir: open");
+            return -1;
+        }
+        if (dup2(fd, 1) == -1) {
+            perror("setRedir: dup2");
+            return -1;
+        }
+    }
+    else {
+        return 1;
+    }
+    return 0;
 }
 
 bool checkStatus(const int status, const std::string &connector) {
@@ -120,13 +189,9 @@ bool checkStatus(const int status, const std::string &connector) {
  *          > 0 - an error occurred
  *          -1  - exit was called
  */
-int execCommand(std::string command)
+void execCommand(std::string command)
 {
-    int status = 1; //return status of function - 0 success Nonzero failure
     int token_count = strip(command);
-    if (command == "") { // if the command is empty just return
-        return status;
-    }
     char *c_command = new char[command.length()+1];
     strcpy(c_command, command.c_str());
     char *tok = strtok(c_command, " ");
@@ -138,37 +203,12 @@ int execCommand(std::string command)
     }
     args[token_count] = 0; // null terminate the array
 
-    if (strcmp(args[0], "exit") == 0) { // check to see if exit was entered
-        std::cout << "exiting rshell...\n";
-        status = -1;
+    if(execvp(args[0], args) == -1) {
+        perror("execvp:");
+        _exit(EXIT_FAILURE);
     }
-
-    else {
-        // time for the fun stuff now.
-        int pid = fork();
-        if (pid == -1) {  // error in fork
-            perror("fork: ");
-            exit(EXIT_FAILURE);
-        }
-        else if (pid == 0) { // in child process
-            if (execvp(args[0], args) == -1) {
-                perror("execvp: ");
-                _exit(EXIT_FAILURE);
-            }
-        }
-        else {  // in parent
-            if (wait(&status) == -1) {
-                perror("wait: ");
-            }
-            if (WIFEXITED(status)) {
-                status = WEXITSTATUS(status);
-            }
-        }
-    }
-
     delete[] args;
     delete[] c_command;
-    return status;
 }
 
 /*
