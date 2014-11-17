@@ -82,14 +82,15 @@ int execCommandList(const std::vector<Command> &commands)
     while (execute && (i < commands.size())) {
         int pid = fork();
         int cmd_status = 0;
-        bool redir = isRedir(commands[i].nextConnector);
         if (pid == -1) {
             perror("execCommandList: fork:");
             exit(EXIT_FAILURE);
         }
         else if (pid == 0) { //in child process
-            if (commands[i].nextConnector != "") {
-                setRedir(commands[i].nextConnector, commands[i+1].command);
+            int j = i;
+            while (isRedir(commands[j].nextConnector)) {
+                setRedir(commands[j].nextConnector, commands[j+1].command);
+                j++;
             }
             execCommand(commands[i].command);
         }
@@ -104,7 +105,9 @@ int execCommandList(const std::vector<Command> &commands)
         }
         if (cmd_status == -1) status = cmd_status;
         execute = checkStatus(cmd_status, commands[i].nextConnector);
-        if (redir) i++;
+        while (isRedir(commands[i].nextConnector)) {
+            i++;
+        }
         i++;
     }
     return status;
