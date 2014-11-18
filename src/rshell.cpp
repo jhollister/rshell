@@ -18,9 +18,10 @@ const std::string COMMENT       = "#";
 const std::string REDIR_OUT     = ">";
 const std::string REDIR_OUT_APP = ">>";
 const std::string REDIR_IN      = "<";
+const std::string PIPE          = "|";
 const std::vector<std::string> DELIMS =
                    {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR,
-                    REDIR_OUT_APP, REDIR_OUT, REDIR_IN};
+                    REDIR_OUT_APP, REDIR_OUT, REDIR_IN, PIPE};
 
 struct Command {
     std::string prevConnector;
@@ -74,18 +75,30 @@ int main()
  * Returns:  1: An error occured and we couldn't finish the commands
  *           0: Successfully executed all commands
  *          -1: Exit was called
+ * TODO: Oh god, this function is terrible.
  */
 int execCommandList(const std::vector<Command> &commands)
 {
     bool execute = true;
     int status = 0;
     unsigned int i = 0;
+    int savestdin;
+    std::string prevConnector;
+    std::string nextConnector;
+    if ((savestdin = dup(0)) == -1)
+                    perror("dup");
     while (execute && (i < commands.size())) {
-        int pid = fork();
+
         int cmd_status = 0;
+        int pipefd[2];
         if (exitCalled(commands[i].command)) {
             return -1;
         }
+        if (pipe(pipefd) == -1) {
+            perror("execCommandList: pipe:");
+            return 1;
+        }
+        int pid = fork();
         if (pid == -1) {
             perror("execCommandList: fork:");
             exit(EXIT_FAILURE);
@@ -99,6 +112,14 @@ int execCommandList(const std::vector<Command> &commands)
                 }
                 j++;
             }
+            if (commands[j].nextConnector == PIPE) {
+                if (dup2(pipefd[1], 1) == -1) {
+                    perror("dup2");
+                }
+                if (close(pipefd[0]) == -1) {
+                    perror("close");
+                }
+            }
             execCommand(commands[i].command);
         }
 
@@ -110,12 +131,24 @@ int execCommandList(const std::vector<Command> &commands)
                 cmd_status = WEXITSTATUS(cmd_status);
             }
         }
-        if (cmd_status == -1) status = cmd_status;
+        prevConnector = commands[i].prevConnector;
         while (isRedir(commands[i].nextConnector)) {
             i++;
         }
+        nextConnector = commands[i].nextConnector;
+        if (commands[i].nextConnector == PIPE) {
+            if ((dup2(pipefd[0], 0)) == -1)
+                perror("dup2");
+            if (close(pipefd[1]) == -1)
+                perror("close");
+        }
         execute = checkStatus(cmd_status, commands[i].nextConnector);
+        if ( prevConnector == PIPE && nextConnector != PIPE) {
+            if ((dup2(savestdin, 0)) == -1)
+                perror("dup2");
+        }
         i++;
+        if (cmd_status == -1) status = cmd_status;
     }
     return status;
 }
@@ -125,6 +158,10 @@ bool isRedir(const std::string &connector) {
             connector == REDIR_OUT_APP);
 }
 
+/*
+ * Sets the appropriate redirect based on which connector is passed.
+ * next is the next command which in this case will be a file
+ */
 int setRedir(const std::string &connector, const std::string &next) {
     std::string file = next;
     strip(file);
@@ -173,7 +210,11 @@ bool exitCalled(const std::string &command) {
     return (cmd.substr(0, std::string("exit").length()) == "exit");
 }
 
-
+/*
+ * Checks the status of a connector based on what value status is.
+ * if staus > 1 then the command failed
+ * if status = 0 then the command succeeded
+ */
 bool checkStatus(const int status, const std::string &connector) {
     bool execute = true;
     if (status == -1) {
@@ -202,9 +243,7 @@ bool checkStatus(const int status, const std::string &connector) {
  * Executes whatever is in the string 'command' with execvp
  * Can have extra whitespace in command but the command must be clear of any
  * connectors or comment characters in order to work correctly.
- * Returns: 0 - succesfully executed command
- *          > 0 - an error occurred
- *          -1  - exit was called
+ * DOES not return. Always call this in a child process
  */
 void execCommand(std::string command)
 {
