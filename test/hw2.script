@@ -1,0 +1,286 @@
+Script started on Thu 20 Nov 2014 09:35:51 PM PST
+~
+jholl013@hammer $ cs100
+[0;91m
+===============================================================================
+|                                                                             |
+| You have enabled settings specific for cs100.                               |
+|                                                                             |
+===============================================================================
+[0m
+[s%%%%%%%%%%[u[0;32mjholl013[0;36m@[0;32mcs100[0;36m:[0;32m~[0;95m (bell) [0;36m$[0m cd rshell
+[s%%%%%%%%%%[u[0;32mjholl013[0;36m@[0;32mcs100[0;36m:[0;32m~/rshell[0;95m (redirect) [0;36m$[0m make rshell
+mkdir -p bin
+g++ -Wall -Werror -ansi -pedantic -std=c++11 -g src/rshell.cpp -o bin/rshell
+[s%%%%%%%%%%[u[0;32mjholl013[0;36m@[0;32mcs100[0;36m:[0;32m~/rshell[0;95m (redirect) [0;36m$[0m binrsh[K[K[K/rshell
+jholl013@hammer.cs.ucr.edu$ # Out put redirection
+jholl013@hammer.cs.ucr.edu$ cat Makefile > new_file
+jholl013@hammer.cs.ucr.edu$ cat new_file
+CC=g++
+CFLAGS=-Wall -Werror -ansi -pedantic -std=c++11 -g
+RSHELL_SOURCES=src/rshell.cpp
+LS_SOURCES=src/ls.cpp
+CP_SOURCES=src/cp.cpp
+EDIR=bin
+RSHELL_TARGET=rshell
+LS_TARGET=ls
+CP_TARGET=cp
+
+all: $(RSHELL_TARGET) $(LS_TARGET) $(CP_TARGET)
+$(RSHELL_TARGET):
+	mkdir -p $(EDIR)
+	$(CC) $(CFLAGS) $(RSHELL_SOURCES) -o $(EDIR)/$@
+$(LS_TARGET):
+	mkdir -p $(EDIR)
+	$(CC) $(CFLAGS) $(LS_SOURCES) -o $(EDIR)/$@
+$(CP_TARGET):
+	mkdir -p $(EDIR)
+	$(CC) $(CFLAGS) $(CP_SOURCES) -o $(EDIR)/$@
+clean:
+	rm -rf $(EDIR)
+jholl013@hammer.cs.ucr.edu$ ls -l
+total 28
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:34 bin
+-rw------- 1 jholl013 csmajs 1083 Nov 20 21:11 LICENSE
+-rw------- 1 jholl013 csmajs  499 Nov 20 21:11 Makefile
+-rw------- 1 jholl013 csmajs  499 Nov 20 21:35 new_file
+-rw------- 1 jholl013 csmajs 3828 Nov 20 21:11 README.md
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:11 src
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:34 test
+jholl013@hammer.cs.ucr.edu$ # Ot ut tput redirectoe rs can be cch  hained together
+jholl013@hammer.cs.ucr.edu$ cat > new_file
+asdfdsasdffdsa
+asdffdassdf
+jholl013@hammer.cs.ucr.edu$ cat new_file
+asdfdsasdffdsa
+asdffdassdf
+jholl013@hammer.cs.ucr.edu$ # Output was res directed to new_file but input was unaffected
+jholl013@hammer.cs.ucr.edu$ #Output redirectors can be chained together as much as you want
+jholl013@hammer.cs.ucr.edu$ cat new_file > file1>file2   >    file3                >file4
+jholl013@hammer.cs.ucr.edu$ #Only file4 will get the output from cat but all other files will be created
+jholl013@hammer.cs.ucr.edu$ # Span ces did not affect command output or parsing
+jholl013@hammer.cs.ucr.edu$ ls -l
+total 24
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:34 bin
+-rw------- 1 jholl013 csmajs    0 Nov 20 21:37 file1
+-rw------- 1 jholl013 csmajs    0 Nov 20 21:37 file2
+-rw------- 1 jholl013 csmajs    0 Nov 20 21:37 file3
+-rw------- 1 jholl013 csmajs   27 Nov 20 21:37 file4
+-rw------- 1 jholl013 csmajs 1083 Nov 20 21:11 LICENSE
+-rw------- 1 jholl013 csmajs  499 Nov 20 21:11 Makefile
+-rw------- 1 jholl013 csmajs   27 Nov 20 21:36 new_file
+-rw------- 1 jholl013 csmajs 3828 Nov 20 21:11 README.md
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:11 src
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:34 test
+jholl013@hammer.cs.ucr.edu$ cat file1
+jholl013@hammer.cs.ucr.edu$ cat file2
+jholl013@hammer.cs.ucr.edu$ cat file3
+jholl013@hammer.cs.ucr.edu$ cat file4
+asdfdsasdffdsa
+asdffdassdf
+jholl013@hammer.cs.ucr.edu$ rm file2 file  1 file1 3
+jholl013@hammer.cs.ucr.edu$ # Append redirector with >>
+jholl013@hammer.cs.ucr.edu$ echo This will be added ot    to new_file >> new_file
+jholl013@hammer.cs.ucr.edu$ cat new_file
+asdfdsasdffdsa
+asdffdassdf
+This will be added to new_file
+jholl013@hammer.cs.ucr.edu$ # This operator followi s the dsa   same rules as normal op  redirc ect
+jholl013@hammer.cs.ucr.edu$ echo add to file >  > file1>>file2>>file3>>file4
+jholl013@hammer.cs.ucr.edu$ ls -l
+total 24
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:34 bin
+-rw------- 1 jholl013 csmajs    0 Nov 20 21:40 file1
+-rw------- 1 jholl013 csmajs    0 Nov 20 21:40 file2
+-rw------- 1 jholl013 csmajs    0 Nov 20 21:40 file3
+-rw------- 1 jholl013 csmajs   39 Nov 20 21:40 file4
+-rw------- 1 jholl013 csmajs 1083 Nov 20 21:11 LICENSE
+-rw------- 1 jholl013 csmajs  499 Nov 20 21:11 Makefile
+-rw------- 1 jholl013 csmajs   58 Nov 20 21:39 new_file
+-rw------- 1 jholl013 csmajs 3828 Nov 20 21:11 README.md
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:11 src
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:34 test
+jholl013@hammer.cs.ucr.edu$ cat file4
+asdfdsasdffdsa
+asdffdassdf
+add to file
+jholl013@hammer.cs.ucr.edu$ rm file1 file2 file3 file4 new_    
+jholl013@hammer.cs.ucr.edu$ ls
+bin  LICENSE  Makefile	new_file  README.md  src  test
+jholl013@hammer.cs.ucr.edu$ 
+jholl013@hammer.cs.ucr.edu$ # Input redirection
+jholl013@hammer.cs.ucr.edu$ cat < Makefile
+CC=g++
+CFLAGS=-Wall -Werror -ansi -pedantic -std=c++11 -g
+RSHELL_SOURCES=src/rshell.cpp
+LS_SOURCES=src/ls.cpp
+CP_SOURCES=src/cp.cpp
+EDIR=bin
+RSHELL_TARGET=rshell
+LS_TARGET=ls
+CP_TARGET=cp
+
+all: $(RSHELL_TARGET) $(LS_TARGET) $(CP_TARGET)
+$(RSHELL_TARGET):
+	mkdir -p $(EDIR)
+	$(CC) $(CFLAGS) $(RSHELL_SOURCES) -o $(EDIR)/$@
+$(LS_TARGET):
+	mkdir -p $(EDIR)
+	$(CC) $(CFLAGS) $(LS_SOURCES) -o $(EDIR)/$@
+$(CP_TARGET):
+	mkdir -p $(EDIR)
+	$(CC) $(CFLAGS) $(CP_SOURCES) -o $(EDIR)/$@
+clean:
+	rm -rf $(EDIR)
+jholl013@hammer.cs.ucr.edu$ # If file doesn't exist
+jholl013@hammer.cs.ucr.edu$ cat < asdfads
+setRedir: open: No such file or directory
+jholl013@hammer.cs.ucr.edu$ # this will affect boolean connectors
+jholl013@hammer.cs.ucr.edu$ cat < asdfasdfd && ehco n     cho nope
+setRedir: open: No such file or directory
+jholl013@hammer.cs.ucr.edu$ cat < asdfasdfas || echo yup
+setRedir: open: No such file or directory
+yup
+jholl013@hammer.cs.ucr.edu$ #Multiple input redirectors
+jholl013@hammer.cs.ucr.edu$ cat < Makefile < LICENSE < README.md
+#RSHELL
+
+##About
+Rshell is a basic shell for UNIX based operating systems written for University of California Riverside's CS100 class. Included in rshell is an implementation of gnu ls, which is compiled and run separately.
+####Features
+
+######rshell
+* Can run executables located in the system's bin directories
+* Chain commands together on one line using `; && ||`
+* Comments are supported using `#`
+* Username and hostname will be diplayed at the prompt
+
+######ls
+* Displays files in columns that scale to the size of your terminal.
+* Colorized output where directories are blue, executables are green, symbolic links are cyan, and hidden files have a gray background.
+* Symbolic links will point to their link when the `-l` flag is passed. If the link is dead it will display it in red.
+
+##How to use
+Project source can be downloaded from https://github.com/jhollister/rshell.git
+######To compile both rshell and ls run the following commands:
+...
+jholl013@hammer.cs.ucr.edu$ # Only last file in stream isoutputted
+jholl013@hammer.cs.ucr.edu$ # mis xing output and input redirection
+jholl013@hammer.cs.ucr.edu$ cat < LICENSE > new_file5
+jholl013@hammer.cs.ucr.edu$ ls
+bin  LICENSE  Makefile	new_file  new_file5  README.md	src  test
+jholl013@hammer.cs.ucr.edu$ cat new_file5
+The MIT License (MIT)
+
+Copyright (c) 2014 James Hollister
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+jholl013@hammer.cs.ucr.edu$ # Piping
+jholl013@hammer.cs.ucr.edu$ ls | cat
+bin
+LICENSE
+Makefile
+new_file
+new_file5
+README.md
+src
+test
+jholl013@hammer.cs.ucr.edu$ ls | cat | tail -2
+src
+test
+jholl013@hammer.cs.ucr.edu$ # As many pipes as you want
+jholl013@hammer.cs.ucr.edu$ ls | cat | tail -2 | head -1 #will print src
+src
+jholl013@hammer.cs.ucr.edu$ # Mixing input output redirection and piping
+jholl013@hammer.cs.ucr.edu$ cat < Makefile | tr a-z A-Z | tee new_file7 | tr A-Z a-z > new_file20
+jholl013@hammer.cs.ucr.edu$ ls
+bin  LICENSE  Makefile	new_file  new_file20  new_file5  new_file7  README.md  src  test
+jholl013@hammer.cs.ucr.edu$ cat new_file5
+The MIT License (MIT)
+
+Copyright (c) 2014 James Hollister
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+jholl013@hammer.cs.ucr.edu$ cat new_file20
+cc=g++
+cflags=-wall -werror -ansi -pedantic -std=c++11 -g
+rshell_sources=src/rshell.cpp
+ls_sources=src/ls.cpp
+cp_sources=src/cp.cpp
+edir=bin
+rshell_target=rshell
+ls_target=ls
+cp_target=cp
+
+all: $(rshell_target) $(ls_target) $(cp_target)
+$(rshell_target):
+	mkdir -p $(edir)
+	$(cc) $(cflags) $(rshell_sources) -o $(edir)/$@
+$(ls_target):
+	mkdir -p $(edir)
+	$(cc) $(cflags) $(ls_sources) -o $(edir)/$@
+$(cp_target):
+	mkdir -p $(edir)
+	$(cc) $(cflags) $(cp_sources) -o $(edir)/$@
+clean:
+	rm -rf $(edir)
+jholl013@hammer.cs.ucr.edu$ ls -l
+total 36
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:34 bin
+-rw------- 1 jholl013 csmajs 1083 Nov 20 21:11 LICENSE
+-rw------- 1 jholl013 csmajs  499 Nov 20 21:11 Makefile
+-rw------- 1 jholl013 csmajs   58 Nov 20 21:39 new_file
+-rw------- 1 jholl013 csmajs  499 Nov 20 21:48 new_file20
+-rw------- 1 jholl013 csmajs 1083 Nov 20 21:44 new_file5
+-rw------- 1 jholl013 csmajs  499 Nov 20 21:48 new_file7
+-rw------- 1 jholl013 csmajs 3828 Nov 20 21:11 README.md
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:11 src
+drwx------ 2 jholl013 csmajs 4096 Nov 20 21:34 test
+jholl013@hammer.cs.ucr.edu$ rm new_file new_file20 new_file5 new_file7
+jholl013@hammer.cs.ucr.edu$ ls
+bin  LICENSE  Makefile	README.md  src	test
+jholl013@hammer.cs.ucr.edu$ cat new_file
+jholl013@hammer.cs.ucr.edu$ exit
+[s%%%%%%%%%%[u[0;32mjholl013[0;36m@[0;32mcs100[0;36m:[0;32m~/rshell[0;95m (redirect) [0;36m$[0m vim sr[K[Ktest/hw2.script 
+7[?47h[?1h=[1;58r[m[H[2J[58;1H"test/hw2.script" 0L, 0C[>c[1;1H[33m  1 [m
+[1m[34m~                                                                                                                                                                                                               [3;1H~                                                                                                                                                                                                               [4;1H~                                                                                                                                                                                                               [5;1H~                                                                                                                                                                                                               [6;1H~                                                                                                                                                                                                               [7;1H~                                                                                                                                                                                                               [8;1H~                                                                                                                                                                                                               [9;1H~                                                                                                                                                                                                               [10;1H~                                                                                                                                                                                                               [11;1H~                                                                                                                                                                                                               [12;1H~                                                                                                                                                                                                               [13;1H~                                                                                                                                                                                                               [14;1H~                                                                                                                                                                                                               [15;1H~                                                                                                                                                                                                               [16;1H~                                                                                                                                                                                                               [17;1H~                                                                                                                                                                                                               [18;1H~                                                                                                                                                                                                               [19;1H~                                                                                                                                                                                                               [20;1H~                                                                                                                                                                                                               [21;1H~                                                                                                                                                                                                               [22;1H~                                                                                                                                                                                                               [23;1H~                                                                                                                                                                                                               [24;1H~                                                                                                                                                                                                               [25;1H~                                                                                                                                                                                                               [26;1H~                                                                                                                                                                                                               [27;1H~                                                                                                                                                                                                               [28;1H~                                                                                                                                                                                                               [29;1H~                                                                                                                                                                                                               [30;1H~                                                                                                                                                                                                               [31;1H~                                                                                                                                                                                                               [32;1H~                                                                                                                                                                                                               [33;1H~                                                                                                                                                                                                               [34;1H~                                                                                                                                                                                                               [35;1H~                                                                                                                                                                                                               [36;1H~                                                                                                                                                                                                               [37;1H~                                                                                                                                                                                                               [38;1H~                                                                                                                                                                                                               [39;1H~                                                                                                                                                                                                               [40;1H~                                                                                                                                                                                                               [41;1H~                                                                                                                                                                                                               [42;1H~                                                                                                                                                                                                               [43;1H~                                                                                                                                                                                                               [44;1H~                                                                                                                                                                                                               [45;1H~                                                                                                                                                                                                               [46;1H~                                                                                                                                                                                                               [47;1H~                                                                                                                                                                                                               [48;1H~                                                                                                                                                                                                               [49;1H~                                                                                                                                                                                                               [50;1H~                                                                                                                                                                                                               [51;1H~                                                                                                                                                                                                               [52;1H~                                                                                                                                                                                                               [53;1H~                                                                                                                                                                                                               [54;1H~                                                                                                                                                                                                               [55;1H~                                                                                                                                                                                                               [56;1H~                                                                                                                                                                                                               [57;1H~                                                                                                                                                                                                               [m[58;191H0,0-1[9CAll[1;5H[58;181H^D[1;5H[58;181H  [1;5H[58;181H^D[1;5H[58;181H  [1;5H[58;181H^D[1;5H[58;181H  [1;5H[58;181H^D[1;5H[58;181H  [1;5H[58;181H:[1;5H[58;1H[K[58;1H:q[58;1H[K[58;1H[?1l>[2J[?47l8[s%%%%%%%%%%[u[0;32mjholl013[0;36m@[0;32mcs100[0;36m:[0;32m~/rshell[0;95m (redirect) [0;36m$[0m exit
+exit
+~
+jholl013@hammer $ exit
+exit
+
+Script done on Thu 20 Nov 2014 09:55:30 PM PST
