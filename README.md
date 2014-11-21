@@ -7,6 +7,7 @@ Rshell is a basic shell for UNIX based operating systems written for University 
 ######rshell
 * Can run executables located in the system's bin directories
 * Chain commands together on one line using `; && ||`
+* Redirect input and output with '> >> < |`
 * Comments are supported using `#`
 * Username and hostname will be diplayed at the prompt
 
@@ -34,6 +35,9 @@ bin/rshell
 * Use the `||` connector and the next commands will only run if the previous failed
 * Chain more than one command together and the commands will be read in left to right order. Everything to the right of a connector is considered one command and will not be executed depending on whether the previous command succeeded or failed. For instance: `echo test || ls ; echo done`  Only `echo test` will be executed and both `ls` and `echo done` will not.
 * Use `#` and everything after will be ignored by the program
+* Use `>` to redirect output to a file.
+* Use `<` to redirect input from a file to a command.
+* Use `|` to pipe output from one command into standard input of another command.
 * Type `exit` at the beginning of any command to exit rshell
 
 ######To run ls:
@@ -56,6 +60,8 @@ bin/ls [FLAG]... [FILE]...
 * When bringing rshell into the foreground with `fg` after suspending it with `Ctrl-z` the prompt does not display
 * Using ctrl-z while a child process is running suspends all of rshell.
 * Character limit of 4095 characters.
+* Output redirection before a pipe can cause unexpected results.
+* Input redirection after a pipe can cause unexpected results.
 
 ######ls
 * Output format does not display correctly with a lot of small files.
