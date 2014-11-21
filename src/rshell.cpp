@@ -34,11 +34,9 @@ int fillCommands(const std::string &input, std::vector<Command> &commands);
 int nextDelim(const std::string &input);
 std::string getDelimAt(const std::string &input, int index);
 int execCommandList(const std::vector<Command> &commands);
-int execCommandList2(const std::vector<Command> &commands);
 int setRedir(const std::string &connector, const std::string &next);
 bool isRedir(const std::string &connector);
 bool exitCalled(const std::string &command);
-void forkCommand(const std::vector<Command> &commands, int index, int *fd_r, int *fd_w);
 void execCommand(std::string command);
 int strip(std::string &);
 int countPipes(const std::vector<Command> &commands, int index);
@@ -157,119 +155,6 @@ int execCommandList(const std::vector<Command> &commands)
     return status;
 }
 
-int execCommandList2(const std::vector<Command>& commands)
-{
-    bool execute = true;
-    unsigned int cmd_index = 0;
-    while (execute && (cmd_index < commands.size())) {
-        int cmd_status = 0;
-        int redir_offset = 0;
-        int pipe_offset = 0;
-        int current_ind = cmd_index;
-        if (exitCalled(commands[cmd_index].command)) {
-            return -1;
-        }
-        pipe_offset = countPipes(commands, cmd_index);
-        int *pipefd = new int[pipe_offset*2];
-        for (int i = 0; i < pipe_offset; i++) {
-            if (pipe((pipefd + 2*i)) == -1) {
-                perror("execCommandList: pipe");
-                return 1;
-            }
-            if (commands[cmd_index + redir_offset + i].prevConnector == "") {
-                forkCommand(commands, cmd_index + redir_offset + i, NULL, pipefd);
-            }
-            while (isRedir(commands[current_ind].nextConnector)) {
-                redir_offset++;
-                current_ind++;
-            }
-            current_ind++;
-        }
-        if (pipe_offset > 0) {
-            forkCommand(commands, current_ind, pipefd + pipe_offset - 1, NULL);
-        }
-        else {
-            forkCommand(commands, current_ind, NULL, NULL);
-        }
-        for(int i = 0; i < pipe_offset; i++) {
-            if (close(pipefd[i]) == -1) {
-                perror("execCommandList: close");
-                exit(EXIT_FAILURE);
-            }
-        }
-        for (int i = 0; i < pipe_offset; i++) {
-            if (wait(0) == -1) {
-                perror("execCommandList: wait");
-                exit(EXIT_FAILURE);
-            }
-        }
-            
-        if (wait(&cmd_status) == -1) {
-            perror("execCommandList: wait");
-            exit(EXIT_FAILURE);
-        }
-        if (WIFEXITED(cmd_status)) {
-            cmd_status = WEXITSTATUS(cmd_status);
-        }
-        delete[] pipefd;
-        //in case there are redirections after the pipe such as ls | cat > file
-        // these will have been handled in forkCommand but still need to set the offset
-        while (isRedir(commands[cmd_index + redir_offset + pipe_offset].nextConnector)) {
-            redir_offset++;
-            current_ind++;
-        }
-        cmd_index += redir_offset + pipe_offset;
-        execute = checkStatus(cmd_status, commands[cmd_index].nextConnector);
-        cmd_index++;
-    }
-    return 0;
-}
-
-void forkCommand(const std::vector<Command> &commands, int index, int *fd_r, int *fd_w) {
-    int pid = fork();
-    if (pid == -1) { // something went wrong
-        perror("forkCommand: fork");
-        exit(EXIT_FAILURE);
-    }
-    else if (pid == 0) { //in child process
-        int j = index;
-        while (isRedir(commands[j].nextConnector)) {
-            if (setRedir(commands[j].nextConnector, commands[j+1].command) == -1) {
-                exit(EXIT_FAILURE);
-            }
-            j++;
-        }
-        if (fd_r != NULL) {
-            if (dup2(fd_r[0], 0) == -1) {
-                perror("forkcommand: dup2");
-                exit(EXIT_FAILURE);
-            }
-            if (close(fd_r[1]) == -1) {
-                perror("forkCommand: closepipe[1]");
-                exit(EXIT_FAILURE);
-            }
-            if (close(fd_r[0]) == -1) {
-                perror("forkCommand: closepipe[0]");
-                exit(EXIT_FAILURE);
-            }
-        }
-        if (fd_w != NULL) {
-            if (dup2(fd_w[1], 1) == -1) {
-                perror("forkCommand: dup2");
-                exit(EXIT_FAILURE);
-            }
-            if (close(fd_w[0]) == -1) {
-                perror("forkCommand: closepipe[0]");
-                exit(EXIT_FAILURE);
-            }
-            if (close(fd_w[1]) == -1) {
-                perror("forkCommand: closepipe[1]");
-                exit(EXIT_FAILURE);
-            }
-        }
-        execCommand(commands[index].command);
-    }
-}
 
 /*
  * Returns true if connector is one of the redirection connectors.
