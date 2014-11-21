@@ -18,11 +18,10 @@ const std::string COMMENT       = "#";
 const std::string REDIR_OUT     = ">";
 const std::string REDIR_OUT_APP = ">>";
 const std::string REDIR_IN      = "<";
-const std::string REDIR_IN_STR  = "<<<";
 const std::string PIPE          = "|";
 const std::vector<std::string> DELIMS =
                    {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR,
-                    REDIR_OUT_APP, REDIR_OUT, REDIR_IN_STR, REDIR_IN, PIPE};
+                    REDIR_OUT_APP, REDIR_OUT, REDIR_IN, PIPE};
 
 struct Command {
     std::string prevConnector;
@@ -87,7 +86,7 @@ int execCommandList(const std::vector<Command> &commands)
     int savestdin;
     std::string prevConnector;
     std::string nextConnector;
-    if ((savestdin = dup(0)) == -1)
+    if ((savestdin = dup(STDIN_FILENO)) == -1)
                     perror("dup");
     while (execute && (i < commands.size())) {
 
@@ -115,11 +114,13 @@ int execCommandList(const std::vector<Command> &commands)
                 j++;
             }
             if (commands[j].nextConnector == PIPE) {
-                if (dup2(pipefd[1], 1) == -1) {
+                if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
                     perror("dup2");
+                    return 1;
                 }
                 if (close(pipefd[0]) == -1) {
                     perror("close");
+                    return 1;
                 }
             }
             execCommand(commands[i].command);
@@ -139,14 +140,14 @@ int execCommandList(const std::vector<Command> &commands)
         }
         nextConnector = commands[i].nextConnector;
         if (commands[i].nextConnector == PIPE) {
-            if ((dup2(pipefd[0], 0)) == -1)
+            if ((dup2(pipefd[0], STDIN_FILENO)) == -1)
                 perror("dup2");
             if (close(pipefd[1]) == -1)
                 perror("close");
         }
         execute = checkStatus(cmd_status, commands[i].nextConnector);
         if ( prevConnector == PIPE && nextConnector != PIPE) {
-            if ((dup2(savestdin, 0)) == -1)
+            if ((dup2(savestdin, STDIN_FILENO)) == -1)
                 perror("dup2");
         }
         i++;
@@ -164,7 +165,7 @@ bool isRedir(const std::string &connector)
     if (connector == "") {
         return false;
     }
-    return (connector.substr(0, 1) == REDIR_IN || connector.substr(connector.length()-1) == REDIR_OUT);
+    return (connector == REDIR_IN || connector.substr(connector.length()-1) == REDIR_OUT);
 }
 
 int countPipes(const std::vector<Command> &commands, int index)
@@ -194,7 +195,7 @@ int setRedir(const std::string &connector, const std::string &next)
             perror("setRedir: open");
             return -1;
         }
-        if (dup2(fd, 1) == -1) {
+        if (dup2(fd, STDOUT_FILENO) == -1) {
             perror("setRedir: dup2");
             return -1;
         }
@@ -205,7 +206,7 @@ int setRedir(const std::string &connector, const std::string &next)
             perror("setRedir: open");
             return -1;
         }
-        if (dup2(fd, 0) == -1) {
+        if (dup2(fd, STDIN_FILENO) == -1) {
             perror("setRedir: dup2");
             return -1;
         }
@@ -216,16 +217,10 @@ int setRedir(const std::string &connector, const std::string &next)
             perror("setRedir: open");
             return -1;
         }
-        if (dup2(fd, 1) == -1) {
+        if (dup2(fd, STDOUT_FILENO) == -1) {
             perror("setRedir: dup2");
             return -1;
         }
-    }
-    else if (connector == REDIR_IN_STR) {
-        //int savein = dup(0);
-        dup2(1, 0);
-        std::cout << next << std::endl << EOF;
-
     }
     else {
         return 1;
