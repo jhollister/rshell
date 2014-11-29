@@ -276,6 +276,7 @@ bool checkStatus(const int status, const std::string &connector)
  */
 void execCommand(std::string command)
 {
+    signal(SIGINT, childSigHandler);
     int token_count = strip(command);
     char *c_command = new char[command.length()+1];
     strcpy(c_command, command.c_str());
@@ -450,5 +451,9 @@ std::string getPrompt()
 
 void childSigHandler(int signum)
 {
-    return;
+    int pid = getpid();
+    if (kill(pid, signum) == -1) {
+        perror("kill");
+        exit(EXIT_FAILURE);
+    }
 }
