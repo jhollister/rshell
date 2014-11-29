@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include <fcntl.h>
 
 const std::string AND_CONNECTOR = "&&";
@@ -42,9 +43,11 @@ int countPipes(const std::vector<Command> &commands, int index);
 void stripLeadingSpaces(std::string &str);
 std::string getPrompt();
 bool checkStatus(const int status, const std::string &connector);
+void childSigHandler(int signum);
 
 int main()
 {
+    signal(SIGINT, SIG_IGN);
     int status = 0;
     std::string prompt = getPrompt();
     while(status == 0) {
@@ -442,4 +445,10 @@ std::string getPrompt()
     prompt += "$ ";
     delete[] hostname;
     return prompt;
+}
+
+
+void childSigHandler(int signum)
+{
+    return;
 }
