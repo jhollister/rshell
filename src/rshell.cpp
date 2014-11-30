@@ -13,7 +13,7 @@
 #include <fcntl.h>
 
 const std::string AND_CONNECTOR = "&&";
-const std::string OR_CONNECTOR  =  "||";
+const std::string OR_CONNECTOR  = "||";
 const std::string CONNECTOR     = ";";
 const std::string COMMENT       = "#";
 const std::string REDIR_OUT     = ">";
