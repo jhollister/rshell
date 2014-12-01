@@ -11,6 +11,8 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <pwd.h>
+#include <uuid/uuid.h>
 
 const std::string AND_CONNECTOR = "&&";
 const std::string OR_CONNECTOR  = "||";
@@ -289,14 +291,19 @@ void execCommand(std::string command)
     }
     args[token_count] = 0; // null terminate the array
 
-    if(execvp(args[0], args) == -1) {
-        perror("execvp:");
-        _exit(EXIT_FAILURE);
+    std::vector<std::string> paths = getPath();
+
+    for (unsigned int i = 0; i < paths.size(); i++) {
+        std::string path = paths[i];
+        path += "/";
+        path += args[0];
+        execv(path.c_str(), args);
     }
-    //not sure what I should do here...
-    //only deleting because cppcheck was yelling at me
+    //Reached the end of the loop without finding a match in path
+    perror("execv");
     delete[] args;
     delete[] c_command;
+    _exit(EXIT_FAILURE);
 }
 
 /*
@@ -426,11 +433,13 @@ std::string getPrompt()
 {
     std::string prompt = "";
     char *login = getlogin();
-    if (login == NULL) {
-        perror("getlogin: ");
+    struct passwd *pwd;
+    pwd = getpwuid(getuid());
+    if (pwd == NULL) {
+        perror("getlogin");
     }
     else {
-        prompt += login;
+        prompt += pwd->pw_name;
     }
 
     int host_len = 20;
