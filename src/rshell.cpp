@@ -54,8 +54,8 @@ int main()
 {
     signal(SIGINT, SIG_IGN);
     int status = 0;
-    std::string prompt = getPrompt();
     while(status == 0) {
+        std::string prompt = getPrompt();
         std::cout << prompt;
         std::string input;
         std::vector<Command> commands;
@@ -504,6 +504,9 @@ std::string getPrompt()
         if (login != NULL) prompt += "@";
         prompt += hostname;
     }
+    std::string current_dir = getCurrentDir();
+    prompt += ":";
+    prompt += current_dir;
     prompt += "$ ";
     delete[] hostname;
     return prompt;
