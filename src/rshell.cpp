@@ -11,6 +11,8 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <pwd.h>
+#include <uuid/uuid.h>
 
 const std::string AND_CONNECTOR = "&&";
 const std::string OR_CONNECTOR  = "||";
@@ -44,6 +46,8 @@ void stripLeadingSpaces(std::string &str);
 std::string getPrompt();
 bool checkStatus(const int status, const std::string &connector);
 void childSigHandler(int signum);
+int getPath(std::vector<std::string> &paths);
+std::string getCurrentDir();
 
 int main()
 {
@@ -289,15 +293,52 @@ void execCommand(std::string command)
     }
     args[token_count] = 0; // null terminate the array
 
-    if(execvp(args[0], args) == -1) {
-        perror("execvp:");
-        _exit(EXIT_FAILURE);
+    std::vector<std::string> paths;
+    //make the current directory the first path to try:
+    std::string current_dir = getCurrentDir();
+    paths.push_back(current_dir);
+    if (getPath(paths) == -1)  {
+        perror("getPath");
+        exit(EXIT_FAILURE);
     }
-    //not sure what I should do here...
-    //only deleting because cppcheck was yelling at me
+
+    for (unsigned int i = 0; i < paths.size(); i++) {
+        std::string path = paths[i];
+        path += "/";
+        path += args[0];
+        execv(path.c_str(), args);
+    }
+    //Reached the end of the loop without finding a match in path
+    perror("execv");
     delete[] args;
     delete[] c_command;
+    _exit(EXIT_FAILURE);
 }
+
+
+int getPath(std::vector<std::string> &paths) {
+    char *c_paths = getenv("PATH");
+    if (c_paths == NULL) {
+        return -1;
+    }
+    char *tok = strtok(c_paths, ":");
+    while (tok != NULL) {
+        paths.push_back(tok);
+        tok = strtok(NULL, ":");
+    }
+    return 0;
+
+}
+
+std::string getCurrentDir() {
+    char cwd[BUFSIZ];
+    if (getcwd(cwd, BUFSIZ) == NULL) {
+        perror("getCurrentDir: getcwd");
+        return "";
+    }
+    return std::string(cwd);
+}
+
 
 /*
  * Strips the extra whitespace from a string and returns the number of tokens
@@ -426,11 +467,13 @@ std::string getPrompt()
 {
     std::string prompt = "";
     char *login = getlogin();
-    if (login == NULL) {
-        perror("getlogin: ");
+    struct passwd *pwd;
+    pwd = getpwuid(getuid());
+    if (pwd == NULL) {
+        perror("getlogin");
     }
     else {
-        prompt += login;
+        prompt += pwd->pw_name;
     }
 
     int host_len = 20;
