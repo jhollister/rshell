@@ -47,6 +47,7 @@ std::string getPrompt();
 bool checkStatus(const int status, const std::string &connector);
 void childSigHandler(int signum);
 int getPath(std::vector<std::string> &paths);
+std::string getCurrentDir();
 
 int main()
 {
@@ -294,8 +295,8 @@ void execCommand(std::string command)
 
     std::vector<std::string> paths;
     //make the current directory the first path to try:
-    // get current directory
-    // paths.push_back(current_dir);
+    std::string current_dir = getCurrentDir();
+    paths.push_back(current_dir);
     if (getPath(paths) == -1)  {
         perror("getPath");
         exit(EXIT_FAILURE);
@@ -327,6 +328,15 @@ int getPath(std::vector<std::string> &paths) {
     }
     return 0;
 
+}
+
+std::string getCurrentDir() {
+    char cwd[BUFSIZ];
+    if (getcwd(cwd, BUFSIZ) == NULL) {
+        perror("getCurrentDir: getcwd");
+        return "";
+    }
+    return std::string(cwd);
 }
 
 
