@@ -46,6 +46,7 @@ void stripLeadingSpaces(std::string &str);
 std::string getPrompt();
 bool checkStatus(const int status, const std::string &connector);
 void childSigHandler(int signum);
+int getPath(std::vector<std::string> &paths);
 
 int main()
 {
@@ -291,7 +292,14 @@ void execCommand(std::string command)
     }
     args[token_count] = 0; // null terminate the array
 
-    std::vector<std::string> paths = getPath();
+    std::vector<std::string> paths;
+    //make the current directory the first path to try:
+    // get current directory
+    // paths.push_back(current_dir);
+    if (getPath(paths) == -1)  {
+        perror("getPath");
+        exit(EXIT_FAILURE);
+    }
 
     for (unsigned int i = 0; i < paths.size(); i++) {
         std::string path = paths[i];
@@ -305,6 +313,22 @@ void execCommand(std::string command)
     delete[] c_command;
     _exit(EXIT_FAILURE);
 }
+
+
+int getPath(std::vector<std::string> &paths) {
+    char *c_paths = getenv("PATH");
+    if (c_paths == NULL) {
+        return -1;
+    }
+    char *tok = strtok(c_paths, ":");
+    while (tok != NULL) {
+        paths.push_back(tok);
+        tok = strtok(NULL, ":");
+    }
+    return 0;
+
+}
+
 
 /*
  * Strips the extra whitespace from a string and returns the number of tokens
