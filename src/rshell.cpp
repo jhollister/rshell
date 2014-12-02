@@ -38,7 +38,7 @@ std::string getDelimAt(const std::string &input, int index);
 int execCommandList(const std::vector<Command> &commands);
 int setRedir(const std::string &connector, const std::string &next);
 bool isRedir(const std::string &connector);
-bool exitCalled(const std::string &command);
+bool firstWord(const std::string &command, const std::string &word);
 void execCommand(std::string command);
 int strip(std::string &);
 int countPipes(const std::vector<Command> &commands, int index);
@@ -48,6 +48,7 @@ bool checkStatus(const int status, const std::string &connector);
 void childSigHandler(int signum);
 int getPath(std::vector<std::string> &paths);
 std::string getCurrentDir();
+int cd(int argc, char *argv[]);
 
 int main()
 {
@@ -99,58 +100,75 @@ int execCommandList(const std::vector<Command> &commands)
 
         int cmd_status = 0;
         int pipefd[2];
-        if (exitCalled(commands[i].command)) {
+        if (firstWord(commands[i].command, "exit")) {
             return -1;
         }
-        if (pipe(pipefd) == -1) {
-            perror("execCommandList: pipe:");
-            return 1;
-        }
-        int pid = fork();
-        if (pid == -1) {
-            perror("execCommandList: fork:");
-            exit(EXIT_FAILURE);
-        }
-        else if (pid == 0) { //in child process
-            int j = i;
-            while (isRedir(commands[j].nextConnector)) {
-                if (setRedir(commands[j].nextConnector,
-                             commands[j+1].command) == -1) {
-                    exit(EXIT_FAILURE);
-                }
-                j++;
+        else if (firstWord(commands[i].command, "cd")) {
+            std::string cd_cmd = commands[i].command;
+            int token_count = strip(cd_cmd);
+            char *c_command = new char[cd_cmd.length()+1];
+            strcpy(c_command, cd_cmd.c_str());
+            char *tok = strtok(c_command, " ");
+            char **args = new char*[token_count+1];
+            for (int i = 0; i < token_count; i++) {
+                args[i] = tok;
+                tok = strtok(NULL, " ");
             }
-            if (commands[j].nextConnector == PIPE) {
-                if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
-                    perror("dup2");
-                    return 1;
-                }
-                if (close(pipefd[0]) == -1) {
-                    perror("close");
-                    return 1;
-                }
-            }
-            execCommand(commands[i].command);
+            cmd_status = cd(token_count, args);
+            delete[] args;
+            delete c_command;
         }
-
         else {
-            if (wait(&cmd_status) == -1) {
-                perror("wait: ");
+            if (pipe(pipefd) == -1) {
+                perror("execCommandList: pipe:");
+                return 1;
             }
-            if (WIFEXITED(cmd_status)) {
-                cmd_status = WEXITSTATUS(cmd_status);
+            int pid = fork();
+            if (pid == -1) {
+                perror("execCommandList: fork:");
+                exit(EXIT_FAILURE);
             }
-        }
-        prevConnector = commands[i].prevConnector;
-        while (isRedir(commands[i].nextConnector)) {
-            i++;
-        }
-        nextConnector = commands[i].nextConnector;
-        if (commands[i].nextConnector == PIPE) {
-            if ((dup2(pipefd[0], STDIN_FILENO)) == -1)
-                perror("dup2");
-            if (close(pipefd[1]) == -1)
-                perror("close");
+            else if (pid == 0) { //in child process
+                int j = i;
+                while (isRedir(commands[j].nextConnector)) {
+                    if (setRedir(commands[j].nextConnector,
+                                 commands[j+1].command) == -1) {
+                        exit(EXIT_FAILURE);
+                    }
+                    j++;
+                }
+                if (commands[j].nextConnector == PIPE) {
+                    if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
+                        perror("dup2");
+                        return 1;
+                    }
+                    if (close(pipefd[0]) == -1) {
+                        perror("close");
+                        return 1;
+                    }
+                }
+                execCommand(commands[i].command);
+            }
+
+            else {
+                if (wait(&cmd_status) == -1) {
+                    perror("wait: ");
+                }
+                if (WIFEXITED(cmd_status)) {
+                    cmd_status = WEXITSTATUS(cmd_status);
+                }
+            }
+            prevConnector = commands[i].prevConnector;
+            while (isRedir(commands[i].nextConnector)) {
+                i++;
+            }
+            nextConnector = commands[i].nextConnector;
+            if (commands[i].nextConnector == PIPE) {
+                if ((dup2(pipefd[0], STDIN_FILENO)) == -1)
+                    perror("dup2");
+                if (close(pipefd[1]) == -1)
+                    perror("close");
+            }
         }
         execute = checkStatus(cmd_status, commands[i].nextConnector);
         if ( prevConnector == PIPE && nextConnector != PIPE) {
@@ -235,11 +253,11 @@ int setRedir(const std::string &connector, const std::string &next)
     return 0;
 }
 
-bool exitCalled(const std::string &command)
+bool firstWord(const std::string &command, const std::string &word)
 {
     std::string cmd = command;
     stripLeadingSpaces(cmd);
-    return (cmd.substr(0, std::string("exit").length()) == "exit");
+    return (cmd.substr(0, std::string(word).length()) == word);
 }
 
 /*
@@ -499,4 +517,28 @@ void childSigHandler(int signum)
         perror("kill");
         exit(EXIT_FAILURE);
     }
+}
+
+int cd(int argc, char *argv[]) {
+    std::string full_path = "";
+    if (argc == 1) {
+        char *home = getenv("HOME");
+        if (home == NULL) {
+            perror("cd: getenv");
+            return 1;
+        }
+        full_path = home;
+    }
+    else {
+        if (argv[1][0] != '/') {
+            full_path = getCurrentDir();
+            full_path += "/";
+        }
+        full_path += argv[1];
+    }
+    if (chdir(full_path.c_str()) == -1) {
+        perror("cd: chdir");
+        return 1;
+    }
+    return 0;
 }
