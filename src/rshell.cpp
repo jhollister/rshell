@@ -1,4 +1,5 @@
 #include <iostream>
+#include <map>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -14,6 +15,38 @@
 #include <pwd.h>
 #include <uuid/uuid.h>
 
+struct Command {
+    std::string prevConnector;
+    std::string command;
+    std::string nextConnector;
+};
+
+struct Process {
+    int pid;
+    std::string command;
+};
+
+int fillCommands(const std::string &input, std::vector<Command> &commands);
+int nextDelim(const std::string &input);
+std::string getDelimAt(const std::string &input, int index);
+int execCommandList(const std::vector<Command> &commands);
+int setRedir(const std::string &connector, const std::string &next);
+bool isRedir(const std::string &connector);
+std::string firstWord(const std::string &command);
+void execCommand(std::string command);
+int strip(std::string &);
+int countPipes(const std::vector<Command> &commands, int index);
+void stripLeadingSpaces(std::string &str);
+std::string getPrompt();
+bool checkStatus(const int status, const std::string &connector);
+void childSigHandler(int signum);
+int getPath(std::vector<std::string> &paths);
+std::string getCurrentDir();
+int cd(int argc, char *argv[]);
+int fg(int argc, char *argv[]);
+int bg(int argc, char *argv[]);
+int exitShell(int argc, char *argv[]);
+
 const std::string AND_CONNECTOR = "&&";
 const std::string OR_CONNECTOR  = "||";
 const std::string CONNECTOR     = ";";
@@ -26,33 +59,17 @@ const std::vector<std::string> DELIMS =
                    {COMMENT, AND_CONNECTOR, OR_CONNECTOR, CONNECTOR,
                     REDIR_OUT_APP, REDIR_OUT, REDIR_IN, PIPE};
 
-struct Command {
-    std::string prevConnector;
-    std::string command;
-    std::string nextConnector;
-};
 
-int fillCommands(const std::string &input, std::vector<Command> &commands);
-int nextDelim(const std::string &input);
-std::string getDelimAt(const std::string &input, int index);
-int execCommandList(const std::vector<Command> &commands);
-int setRedir(const std::string &connector, const std::string &next);
-bool isRedir(const std::string &connector);
-bool firstWord(const std::string &command, const std::string &word);
-void execCommand(std::string command);
-int strip(std::string &);
-int countPipes(const std::vector<Command> &commands, int index);
-void stripLeadingSpaces(std::string &str);
-std::string getPrompt();
-bool checkStatus(const int status, const std::string &connector);
-void childSigHandler(int signum);
-int getPath(std::vector<std::string> &paths);
-std::string getCurrentDir();
-int cd(int argc, char *argv[]);
+std::vector<Process> jobs;
+std::map<std::string, int (*)(int,char**)> commandMap = {
+    { "cd", cd },
+    { "fg", fg },
+    { "bg", bg } };
 
 int main()
 {
     signal(SIGINT, SIG_IGN);
+    signal(SIGTSTP, SIG_IGN);
     int status = 0;
     while(status == 0) {
         std::string prompt = getPrompt();
@@ -100,10 +117,11 @@ int execCommandList(const std::vector<Command> &commands)
 
         int cmd_status = 0;
         int pipefd[2];
-        if (firstWord(commands[i].command, "exit")) {
+        std::string first_word = firstWord(commands[i].command);
+        if (first_word == "exit") {
             return -1;
         }
-        else if (firstWord(commands[i].command, "cd")) {
+        else if (commandMap.find(first_word) != commandMap.end()) {
             std::string cd_cmd = commands[i].command;
             int token_count = strip(cd_cmd);
             char *c_command = new char[cd_cmd.length()+1];
@@ -114,7 +132,7 @@ int execCommandList(const std::vector<Command> &commands)
                 args[i] = tok;
                 tok = strtok(NULL, " ");
             }
-            cmd_status = cd(token_count, args);
+            cmd_status = commandMap.at(first_word)(token_count, args);
             delete[] args;
             delete c_command;
         }
@@ -151,11 +169,20 @@ int execCommandList(const std::vector<Command> &commands)
             }
 
             else {
-                if (wait(&cmd_status) == -1) {
+                if (waitpid(pid, &cmd_status, WUNTRACED) == -1) {
                     perror("wait: ");
                 }
                 if (WIFEXITED(cmd_status)) {
                     cmd_status = WEXITSTATUS(cmd_status);
+                }
+                else if (WIFSTOPPED(cmd_status)) {
+                    Process child;
+                    child.pid = pid;
+                    child.command = commands[i].command;
+                    std::cout << std::endl << (jobs.size() + 1)
+                        << "\tStopped\t\t" << child.command << std::endl;
+                    jobs.push_back(child);
+                    cmd_status = 1;
                 }
             }
             prevConnector = commands[i].prevConnector;
@@ -253,11 +280,11 @@ int setRedir(const std::string &connector, const std::string &next)
     return 0;
 }
 
-bool firstWord(const std::string &command, const std::string &word)
+std::string firstWord(const std::string &command)
 {
     std::string cmd = command;
     stripLeadingSpaces(cmd);
-    return (cmd.substr(0, std::string(word).length()) == word);
+    return (cmd.substr(0, cmd.find(" ")));
 }
 
 /*
@@ -299,6 +326,7 @@ bool checkStatus(const int status, const std::string &connector)
 void execCommand(std::string command)
 {
     signal(SIGINT, childSigHandler);
+    signal(SIGTSTP, childSigHandler);
     int token_count = strip(command);
     char *c_command = new char[command.length()+1];
     strcpy(c_command, command.c_str());
@@ -545,3 +573,52 @@ int cd(int argc, char *argv[]) {
     }
     return 0;
 }
+
+int fg(int argc, char *argv[]) {
+    int index;
+    int status = 1;
+    if (argc <= 1) {
+        //index is last job in list
+        index = jobs.size() - 1;
+    }
+    else {
+        try {
+            index = std::stoi(std::string(argv[1])) - 1;
+        }
+        catch (...) {
+            std::cerr << "fg: invalid argument\n";
+            return 1;
+        }
+    }
+    if (index >= jobs.size()) {
+        std::cerr << "fg: no such job\n";
+        return 1;
+    }
+    // resume job
+    if (kill(jobs[index].pid, SIGCONT) == -1) {
+        perror("fg: continue");
+        return 1;
+    }
+    if (waitpid(jobs[index].pid, &status, WUNTRACED) == -1) {
+        perror("wait: ");
+    }
+    if (WIFEXITED(status)) {
+        status = WEXITSTATUS(status);
+    }
+    else if (WIFSTOPPED(status)) {
+        Process child;
+        child.pid = jobs[index].pid;
+        child.command = jobs[index].command;
+        std::cout << std::endl << (jobs.size())
+            << "\tStopped\t\t" << child.command << std::endl;
+        jobs.push_back(child);
+        status = 1;
+    }
+    jobs.erase(jobs.begin() + index);
+    return status;
+}
+
+int bg(int argc, char *argv[]) {
+    return 0;
+}
+
