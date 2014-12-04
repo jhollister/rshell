@@ -47,7 +47,7 @@ int cd(int argc, char *argv[]);
 int fg(int argc, char *argv[]);
 int bg(int argc, char *argv[]);
 int getJobs(int argc, char *argv[]);
-int exitShell(int argc, char *argv[]);
+void exitShell();
 
 const std::string AND_CONNECTOR = "&&";
 const std::string OR_CONNECTOR  = "||";
@@ -122,6 +122,7 @@ int execCommandList(const std::vector<Command> &commands)
         int pipefd[2];
         std::string first_word = firstWord(commands[i].command);
         if (first_word == "exit") {
+            exitShell();
             return -1;
         }
         else if (commandMap.find(first_word) != commandMap.end()) {
@@ -641,3 +642,11 @@ int getJobs(int argc, char *argv[])
     return 0;
 }
 
+void exitShell() {
+    for (unsigned int i = 0; i < jobs.size(); i++) {
+        if (kill(jobs[i].pid, SIGKILL) == -1) {
+            std::string msg = "could not stop job: " + jobs[i].command;
+            perror(msg.c_str());
+        }
+    }
+}
