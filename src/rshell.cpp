@@ -23,6 +23,7 @@ struct Command {
 
 struct Process {
     int pid;
+    std::string status;
     std::string command;
 };
 
@@ -45,6 +46,7 @@ std::string getCurrentDir();
 int cd(int argc, char *argv[]);
 int fg(int argc, char *argv[]);
 int bg(int argc, char *argv[]);
+int getJobs(int argc, char *argv[]);
 int exitShell(int argc, char *argv[]);
 
 const std::string AND_CONNECTOR = "&&";
@@ -64,7 +66,8 @@ std::vector<Process> jobs;
 std::map<std::string, int (*)(int,char**)> commandMap = {
     { "cd", cd },
     { "fg", fg },
-    { "bg", bg } };
+    { "bg", bg },
+    { "jobs", getJobs} };
 
 int main()
 {
@@ -179,8 +182,10 @@ int execCommandList(const std::vector<Command> &commands)
                     Process child;
                     child.pid = pid;
                     child.command = commands[i].command;
+                    child.status = "Stopped";
                     std::cout << std::endl << (jobs.size() + 1)
-                        << "\tStopped\t\t" << child.command << std::endl;
+                        << "\t" << child.status << "\t\t"
+                        << child.command << std::endl;
                     jobs.push_back(child);
                     cmd_status = 1;
                 }
@@ -550,7 +555,8 @@ void childSigHandler(int signum)
     }
 }
 
-int cd(int argc, char *argv[]) {
+int cd(int argc, char *argv[])
+{
     std::string full_path = "";
     if (argc == 1) {
         char *home = getenv("HOME");
@@ -574,7 +580,8 @@ int cd(int argc, char *argv[]) {
     return 0;
 }
 
-int fg(int argc, char *argv[]) {
+int fg(int argc, char *argv[])
+{
     int index;
     int status = 1;
     if (argc <= 1) {
@@ -609,16 +616,28 @@ int fg(int argc, char *argv[]) {
         Process child;
         child.pid = jobs[index].pid;
         child.command = jobs[index].command;
+        child.status = "Stopped";
         std::cout << std::endl << (jobs.size())
-            << "\tStopped\t\t" << child.command << std::endl;
-        jobs.push_back(child);
+            << "\t" << child.status << "\t\t"
+            << child.command << std::endl;
         status = 1;
+        jobs.push_back(child);
     }
     jobs.erase(jobs.begin() + index);
     return status;
 }
 
-int bg(int argc, char *argv[]) {
+int bg(int argc, char *argv[])
+{
+    return 0;
+}
+
+int getJobs(int argc, char *argv[])
+{
+    for (unsigned int i = 0; i < jobs.size(); i++) {
+        std::cout << (i+1) << "\t" << jobs[i].status << "\t\t"
+            << jobs[i].command << std::endl;
+    }
     return 0;
 }
 
