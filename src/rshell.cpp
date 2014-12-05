@@ -75,6 +75,20 @@ int main()
     signal(SIGTSTP, SIG_IGN);
     int status = 0;
     while(status == 0) {
+        //check to see if any of our jobs are done
+        int pid = waitpid (WAIT_ANY, NULL, WNOHANG);
+        if (pid < 0 && errno != ECHILD) {
+            perror("waitpid");
+        }
+        else if (pid > 0) {
+            for (int i = 0; i < jobs.size(); i++) {
+                if (jobs[i].pid == pid) {
+                    std::cerr << std::endl << (i + 1) << "\t"
+                        << "Done\t\t" << jobs[i].command << std::endl;
+                    jobs.erase(jobs.begin() + i);
+                }
+            }
+        }
         std::string prompt = getPrompt();
         std::cout << prompt;
         std::string input;
@@ -603,9 +617,11 @@ int fg(int argc, char *argv[])
         return 1;
     }
     // resume job
-    if (kill(jobs[index].pid, SIGCONT) == -1) {
-        perror("fg: continue");
-        return 1;
+    if (jobs[index].status == "STOPPED") {
+        if (kill(jobs[index].pid, SIGCONT) == -1) {
+            perror("fg: continue");
+            return 1;
+        }
     }
     if (waitpid(jobs[index].pid, &status, WUNTRACED) == -1) {
         perror("wait: ");
@@ -631,7 +647,6 @@ int fg(int argc, char *argv[])
 int bg(int argc, char *argv[])
 {
     int index;
-    int status = 1;
     if (argc <= 1) {
         //index is last job in list
         index = jobs.size() - 1;
@@ -641,38 +656,21 @@ int bg(int argc, char *argv[])
             index = std::stoi(std::string(argv[1])) - 1;
         }
         catch (...) {
-            std::cerr << "fg: invalid argument\n";
+            std::cerr << "bg: invalid argument\n";
             return 1;
         }
     }
     if (index >= jobs.size() || jobs.empty()) {
-        std::cerr << "fg: no such job\n";
+        std::cerr << "bg: no such job\n";
         return 1;
     }
     // resume job
     if (kill(jobs[index].pid, SIGCONT) == -1) {
-        perror("fg: continue");
+        perror("bg: continue");
         return 1;
     }
-    if (waitpid(jobs[index].pid, &status, WUNTRACED) == -1) {
-        perror("wait: ");
-    }
-    if (WIFEXITED(status)) {
-        status = WEXITSTATUS(status);
-    }
-    else if (WIFSTOPPED(status)) {
-        Process child;
-        child.pid = jobs[index].pid;
-        child.command = jobs[index].command;
-        child.status = "Stopped";
-        std::cout << std::endl << (jobs.size())
-            << "\t" << child.status << "\t\t"
-            << child.command << std::endl;
-        status = 1;
-        jobs.push_back(child);
-    }
-    jobs.erase(jobs.begin() + index);
-    return status;
+    jobs[index].status = "Running";
+    return 0;
 }
 
 int getJobs(int argc, char *argv[])
