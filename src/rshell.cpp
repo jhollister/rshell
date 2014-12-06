@@ -13,7 +13,6 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <pwd.h>
-#include <uuid/uuid.h>
 
 struct Command {
     std::string prevConnector;
@@ -81,7 +80,7 @@ int main()
             perror("waitpid");
         }
         else if (pid > 0) {
-            for (int i = 0; i < jobs.size(); i++) {
+            for (unsigned int i = 0; i < jobs.size(); i++) {
                 if (jobs[i].pid == pid) {
                     std::cerr << std::endl << (i + 1) << "\t"
                         << "Done\t\t" << jobs[i].command << std::endl;
@@ -152,7 +151,7 @@ int execCommandList(const std::vector<Command> &commands)
             }
             cmd_status = commandMap.at(first_word)(token_count, args);
             delete[] args;
-            delete c_command;
+            delete[] c_command;
         }
         else {
             if (pipe(pipefd) == -1) {
@@ -600,7 +599,7 @@ int cd(int argc, char *argv[])
 
 int fg(int argc, char *argv[])
 {
-    int index;
+    unsigned int index;
     int status = 1;
     if (argc <= 1) {
         //index is last job in list
@@ -649,7 +648,7 @@ int fg(int argc, char *argv[])
 
 int bg(int argc, char *argv[])
 {
-    int index;
+    unsigned int index;
     if (argc <= 1) {
         //index is last job in list
         index = jobs.size() - 1;
