@@ -70,8 +70,14 @@ std::map<std::string, int (*)(int,char**)> commandMap = {
 
 int main()
 {
-    signal(SIGINT, SIG_IGN);
-    signal(SIGTSTP, SIG_IGN);
+    if (signal(SIGINT, SIG_IGN) == SIG_ERR) {
+        perror("signal");
+        exit(EXIT_FAILURE);
+    }
+    if (signal(SIGTSTP, SIG_IGN) == SIG_ERR) {
+        perror("signal");
+        exit(EXIT_FAILURE);
+    }
     int status = 0;
     while(status == 0) {
         //check to see if any of our bg jobs are done
@@ -344,8 +350,14 @@ bool checkStatus(const int status, const std::string &connector)
  */
 void execCommand(std::string command)
 {
-    signal(SIGINT, childSigHandler);
-    signal(SIGTSTP, childSigHandler);
+    if (signal(SIGINT, childSigHandler) == SIG_ERR) {
+        perror("execCommand: signal");
+        _exit(EXIT_FAILURE);
+    }
+    if (signal(SIGTSTP, childSigHandler) == SIG_ERR) {
+        perror("execCommand: signal");
+        _exit(EXIT_FAILURE);
+    }
     int token_count = strip(command);
     char *c_command = new char[command.length()+1];
     strcpy(c_command, command.c_str());
