@@ -75,7 +75,7 @@ int main()
     signal(SIGTSTP, SIG_IGN);
     int status = 0;
     while(status == 0) {
-        //check to see if any of our jobs are done
+        //check to see if any of our bg jobs are done
         int pid = waitpid (WAIT_ANY, NULL, WNOHANG);
         if (pid < 0 && errno != ECHILD) {
             perror("waitpid");
@@ -383,15 +383,18 @@ void execCommand(std::string command)
 
 
 int getPath(std::vector<std::string> &paths) {
-    char *c_paths = getenv("PATH");
+    const char *c_paths = getenv("PATH");
     if (c_paths == NULL) {
         return -1;
     }
-    char *tok = strtok(c_paths, ":");
+    char *temp = new char[strlen(c_paths + 1)];
+    strcpy(temp, c_paths);
+    char *tok = strtok(temp, ":");
     while (tok != NULL) {
         paths.push_back(tok);
         tok = strtok(NULL, ":");
     }
+    delete[] temp;
     return 0;
 
 }
