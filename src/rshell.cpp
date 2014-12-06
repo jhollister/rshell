@@ -534,7 +534,6 @@ std::string getDelimAt(const std::string &input, int index)
 std::string getPrompt()
 {
     std::string prompt = "";
-    char *login = getlogin();
     struct passwd *pwd;
     pwd = getpwuid(getuid());
     if (pwd == NULL) {
@@ -551,7 +550,7 @@ std::string getPrompt()
     }
     else {
 
-        if (login != NULL) prompt += "@";
+        if (pwd != NULL) prompt += "@";
         prompt += hostname;
     }
     std::string current_dir = getCurrentDir();
