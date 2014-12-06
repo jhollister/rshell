@@ -620,7 +620,7 @@ int fg(int argc, char *argv[])
         return 1;
     }
     // resume job
-    if (jobs[index].status == "STOPPED") {
+    if (jobs[index].status == "Stopped") {
         if (kill(jobs[index].pid, SIGCONT) == -1) {
             perror("fg: continue");
             return 1;
