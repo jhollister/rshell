@@ -1,0 +1,194 @@
+Script started on Fri 05 Dec 2014 07:28:23 PM PST
+~
+jholl013@hammer $ cs100
+[0;91m
+===============================================================================
+|                                                                             |
+| You have enabled settings specific for cs100.                               |
+|                                                                             |
+===============================================================================
+[0m
+[s%%%%%%%%%%[u[0;32mjholl013[0;36m@[0;32mcs100[0;36m:[0;32m~[0;95m (bell) [0;36m$[0m cd rshell
+[s%%%%%%%%%%[u[0;32mjholl013[0;36m@[0;32mcs100[0;36m:[0;32m~/rshell[0;95m (master) [0;36m$[0m make rshell
+mkdir -p bin
+g++ -Wall -Werror -ansi -pedantic -std=c++11 -g src/rshell.cpp -o bin/rshell
+[s%%%%%%%%%%[u[0;32mjholl013[0;36m@[0;32mcs100[0;36m:[0;32m~/rshell[0;95m (master) [0;36m$[0m bin/rshell
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # All command  s are now run with execv and function exactly the same as before
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ ls
+bin  LICENSE  Makefile	README.md  signals.script  src	test
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ whih ch ls
+/bin/ls
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ cat Makefile
+CC=g++
+CFLAGS=-Wall -Werror -ansi -pedantic -std=c++11 -g
+RSHELL_SOURCES=src/rshell.cpp
+LS_SOURCES=src/ls.cpp
+CP_SOURCES=src/cp.cpp
+EDIR=bin
+RSHELL_TARGET=rshell
+LS_TARGET=ls
+CP_TARGET=cp
+
+all: $(RSHELL_TARGET) $(LS_TARGET) $(CP_TARGET)
+$(RSHELL_TARGET):
+	mkdir -p $(EDIR)
+	$(CC) $(CFLAGS) $(RSHELL_SOURCES) -o $(EDIR)/$@
+$(LS_TARGET):
+	mkdir -p $(EDIR)
+	$(CC) $(CFLAGS) $(LS_SOURCES) -o $(EDIR)/$@
+$(CP_TARGET):
+	mkdir -p $(EDIR)
+	$(CC) $(CFLAGS) $(CP_SOURCES) -o $(EDIR)/$@
+clean:
+	rm -rf $(EDIR)
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ which cat
+/bin/cat
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ which which
+/usr/bin/which
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ which cs100
+/usr/csshare/cs100/bin/cs100
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ cs100
+[0;91m
+===============================================================================
+|                                                                             |
+| You have enabled settings specific for cs100.                               |
+|                                                                             |
+===============================================================================
+[0m
+[s%%%%%%%%%%[u[0;32mjholl013[0;36m@[0;32mcs100[0;36m:[0;32m~[0;95m (bell) [0;36m$[0m exit
+exit
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # You can change directi ories whi  ith cs d
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # No arguments will change to home directory
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ cd
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013$ pwd
+/home/csmajs/jholl013
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013$ cd /
+jholl013@hammer.cs.ucr.edu:/$ pwd
+/
+jholl013@hammer.cs.ucr.edu:/$ cd
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013$ pwd
+/home/csmajs/jholl013
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013$ # Prompt updates every time cd 1 is called
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013$ cd rshell
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # Full paths with cd
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ cd /home/csmo ajs/joh  j hoo ll013
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013$ # Trying to cd to a file does not exist
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013$ cd asdf
+cd: chdir: No such file or directory
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013$ cd /root #no permissions for this
+cd: chdir: Permission denied
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013$ cd rshell
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ cd bin
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell/bin$ # pa  The path for a file looks in the current directory first, unlin ke bash
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell/bin$ ls
+[0;32mcp[0m  [0;32mls[0m  [0;32mrshell[0m  
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell/bin$ # That was my own bash instead of the real b ls^[[D     s^[[D     s
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell/bin$ cd ..
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # Ctrl  -c does nothing in rshell parent
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ ^C^C^C^C^C^C^C^C^C^C
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ ^C^C^C^C^C
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ ^C^C^Cls
+bin  LICENSE  Makefile	README.md  signals.script  src	test
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # Running a child p       process will quit with ctrl-c
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ cat
+^Cjholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ ping gogo  ogle.com
+PING google.com (74.125.239.105) 56(84) bytes of data.
+^C
+--- google.com ping statistics ---
+2 packets transmitted, 0 received, 100% packet loss, time 1221ms
+
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ cleep     sleep 10
+^Cjholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ sleep 1000
+^Cjholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ ps
+  PID TTY          TIME CMD
+11259 pts/12   00:00:00 bash
+11278 pts/12   00:00:00 rshell
+11961 pts/12   00:00:00 ps
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ #Process are quit
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # ctrl-z will also do wn  nothing in rshell
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ ^Z^Z^Z^Z^Z^Z^Z^Z
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # in a child process it will stop it and add to jobs list
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ ping google.com
+PING google.com (74.125.239.99) 56(84) bytes of data.
+^Z
+1	Stopped		ping google.com
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ sleep 15
+^Z
+2	Stopped		sleep 15
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ cat
+asdf
+asdf
+fdas
+fdas
+^Z
+3	Stopped		cat
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ jobs
+1	Stopped		ping google.com
+2	Stopped		sleep 15
+3	Stopped		cat
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # You can bring a job to the gore    foreground with fg #
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # fg on its own will bring last jobs    to fou regorund
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ fg
+asdf
+asdf
+fdsa
+fdsa
+asdffdas
+asdffdas
+this is cat
+this is cat
+^Cjholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # now jobs    has been removed
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ jobs
+1	Stopped		ping google.com
+2	Stopped		sleep 15
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # bring ping to fg oreground
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ fg 1
+
+--- google.com ping statistics ---
+2 packets transmitted, 0 received, 100% packet loss, time 97251ms
+
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ jobs
+1	Stopped		sleep 15
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ fg
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ #sleep was already finished
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # You can also make a stopped process run in the background with bg
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ wget --quiet https://www.kernel.org/pub/linux/kernel/v3.x/testing/linux-3.18-rc7.tar.xz
+^Z
+1	Stopped		wget --quiet https://www.kernel.org/pub/linux/kernel/v3.x/testing/linux-3.18-rc7.tar.xz
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ jobs
+1	Stopped		wget --quiet https://www.kernel.org/pub/linux/kernel/v3.x/testing/linux-3.18-rc7.tar.xz
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # jobs  is stopped and no longer downloading
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ fg
+^Z
+1	Stopped		wget --quiet https://www.kernel.org/pub/linux/kernel/v3.x/testing/linux-3.18-rc7.tar.xz
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ bg
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ #jobs    is now in background downloading
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ jobs
+1	Running		wget --quiet https://www.kernel.org/pub/linux/kernel/v3.x/testing/linux-3.18-rc7.tar.xz
+
+1	Done		wget --quiet https://www.kernel.org/pub/linux/kernel/v3.x/testing/linux-3.18-rc7.tar.xz
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ # background jobs display a status of "Running" and when done will print that they are done to     
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ jobs
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ ls
+bin  LICENSE  linux-3.18-rc7.tar.xz  Makefile  README.md  signals.script  src  test
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ ls -l
+total 79140
+drwx------ 2 jholl013 csmajs     4096 Dec  5 19:26 bin
+-rw------- 1 jholl013 csmajs     1083 Dec  5 18:45 LICENSE
+-rw------- 1 jholl013 csmajs 80927772 Nov 30 16:50 linux-3.18-rc7.tar.xz
+-rw------- 1 jholl013 csmajs      499 Dec  5 18:45 Makefile
+-rw------- 1 jholl013 csmajs     3565 Dec  5 18:45 README.md
+-rw------- 1 jholl013 csmajs        0 Dec  5 19:26 signals.script
+drwx------ 2 jholl013 csmajs     4096 Dec  5 19:25 src
+drwx------ 2 jholl013 csmajs     4096 Dec  5 18:45 test
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ rm -f linux-3.18-rc7.r tar.xz
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ ls
+bin  LICENSE  Makefile	README.md  signals.script  src	test
+jholl013@hammer.cs.ucr.edu:/home/csmajs/jholl013/rshell$ exit
+[s%%%%%%%%%%[u[0;32mjholl013[0;36m@[0;32mcs100[0;36m:[0;32m~/rshell[0;95m (master) [0;36m$[0m exit
+exit
+~
+jholl013@hammer $ exit
+exit
+
+Script done on Fri 05 Dec 2014 07:41:36 PM PST
