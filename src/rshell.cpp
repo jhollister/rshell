@@ -386,7 +386,7 @@ int getPath(std::vector<std::string> &paths) {
     if (c_paths == NULL) {
         return -1;
     }
-    char *temp = new char[strlen(c_paths + 1)];
+    char *temp = new char[strlen(c_paths)+1];
     strcpy(temp, c_paths);
     char *tok = strtok(temp, ":");
     while (tok != NULL) {
